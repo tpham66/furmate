@@ -26,4 +26,14 @@ class GoogleAuthService {
       return null;
     }
   }
+
+  Future<void> signOutFromGoogle() async {
+    try {
+      // Sign out from Firebase and Google
+      await FirebaseAuth.instance.signOut();
+      await GoogleSignIn().signOut();
+    } catch (e) {
+      errorMessage = 'Error signing out from Google: $e';
+    }
+  }
 }

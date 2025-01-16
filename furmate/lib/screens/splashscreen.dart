@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'signup.dart';
 import 'signin.dart';
 import '../widgets/interactive_logo.dart';
+import 'package:get/get.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class SplashScreen extends StatelessWidget {
+  const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Home'),
-      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            const SizedBox(height: 50),
             InteractiveLogo(),
             Title(
                 color: Colors.brown,
@@ -26,30 +25,31 @@ class HomePage extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                       fontFamily: 'Inter'),
                 )),
-            const SizedBox(height: 70),
+            Spacer(),
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SignIn()),
-                    );
+                    Get.to(() => SignIn());
                   },
-                  child: Text('Sign In'),
+                  child: Text(
+                    'Sign In',
+                    style: TextStyle(fontSize: 14),
+                  ),
                 ),
+                const SizedBox(height:10),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => SignUp()),
-                    );
-                  },
-                  child: Text('Sign Up')
-                )
+                    onPressed: () {
+                      Get.to(() => SignUp());
+                    },
+                    child: Text(
+                      'Sign Up',
+                      style: TextStyle(fontSize: 14),
+                    ))
               ],
             ),
+            const SizedBox(height: 150,),
           ],
         ),
       ),
