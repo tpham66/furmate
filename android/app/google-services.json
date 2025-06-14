@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "434584330980",
+    "project_id": "furmate-b50c4",
+    "storage_bucket": "furmate-b50c4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:434584330980:android:2f4e1c6ad3ac47227142f1",
+        "android_client_info": {
+          "package_name": "com.kyrapham.furmate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPMkMARs3yLEfDnfM2PV5b7nkOhYZtxvE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
