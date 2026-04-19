@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'signup.dart';
 import 'signin.dart';
-import '../widgets/interactive_logo.dart';
-import '../widgets/button.dart';
+import '../widgets/general/interactive_logo.dart';
+import '../widgets/general/button.dart';
 import 'package:get/get.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -11,6 +11,9 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        toolbarHeight: -50,
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -45,8 +48,7 @@ class SplashScreen extends StatelessWidget {
                   onTap: () {
                     Get.to(() => SignUp());
                   },
-                  width: 143,
-                  height: 57
+                  width: 143
                 )
               ],
             ),

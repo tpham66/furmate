@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/image_picker.dart';
+import '../widgets/general/image_picker.dart';
+import '../widgets/general/button.dart';
 import 'package:get/get.dart';
 import 'dart:io';
 
@@ -44,8 +45,7 @@ class PetProfileState extends State<PetProfile> {
 
   void _saveForm() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // Form is valid
-      widget.onSave({
+      final data = {
         'name': _nameController.text,
         'gender': getGender(_selectedGenders),
         'age': _ageController.text,
@@ -53,8 +53,14 @@ class PetProfileState extends State<PetProfile> {
         'breed': _breedController.text,
         'weight': _weightController.text,
         'note': _noteController.text,
-        'imagePath': _image!.path,
-      });
+        'imagePath': _image?.path ?? '',
+      };
+
+      if (widget.petData != null && widget.petData!['id'] != null) {
+        data['id'] = widget.petData!['id']!;
+      }
+
+      widget.onSave(data);
       Get.back(); // Navigate back
     } else {}
   }
@@ -113,9 +119,10 @@ class PetProfileState extends State<PetProfile> {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.grey.shade200,
-                      backgroundImage:
-                          _image != null ? FileImage(_image!) : null,
-                      child: _image == null
+                      backgroundImage: (_image != null && _image!.existsSync())
+                          ? FileImage(_image!)
+                          : null,
+                      child: (_image == null || !_image!.existsSync())
                           ? const Icon(Icons.pets, size: 50, color: Colors.grey)
                           : null,
                     ),
@@ -261,13 +268,12 @@ class PetProfileState extends State<PetProfile> {
 
                 // Save button
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _saveForm,
-                  style: ElevatedButton.styleFrom(
-                    splashFactory: InkRipple.splashFactory,
-                  ),
-                  child: const Text('Save'),
-                )
+                CustomButton(
+                  label: 'Save', 
+                  onTap: _saveForm, 
+                  width: 143, 
+                  height: 57
+                ),
               ],
             ),
           ),

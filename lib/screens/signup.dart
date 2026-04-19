@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:furmate/screens/home.dart';
-import '../services/google_auth_service.dart';
-import '../services/facebook_auth_service.dart';
+import '../services/authentication/google_auth_service.dart';
+import '../services/authentication/facebook_auth_service.dart';
 import 'package:get/get.dart';
 import 'signin.dart';
-import '../widgets/error_dialog.dart';
-import '../widgets/interactive_logo.dart';
-import '../widgets/button.dart';
+import '../widgets/general/error_dialog.dart';
+import '../widgets/general/interactive_logo.dart';
+import '../widgets/general/button.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -91,7 +91,7 @@ class SignUpState extends State<SignUp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 0,
+        toolbarHeight: -20,
       ),
       body: Padding(
         padding: const EdgeInsets.all(30.0),
@@ -192,12 +192,12 @@ class SignUpState extends State<SignUp> {
                   )),
               const SizedBox(height: 30),
               CustomButton(
-                  label: 'Sign Up',
-                  onTap: () {
-                    Get.to(() => SignUp());
-                  },
-                  width: 143,
-                  height: 57),
+                label: 'Sign Up',
+                onTap: () {
+                  Get.to(() => SignUp());
+                },
+                width: 143
+              ),
               const SizedBox(height: 20),
               Row(
                 children: [

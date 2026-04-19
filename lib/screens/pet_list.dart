@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:furmate/screens/pet_profile.dart';
 import 'package:get/get.dart';
+import 'dart:io';
+
 
 enum Menu { edit, remove }
 
-List<Map<String, String>> pets = [];
 
 class PetList extends StatefulWidget {
   const PetList({super.key});
@@ -14,30 +15,21 @@ class PetList extends StatefulWidget {
 }
 
 class PetListState extends State<PetList> {
+  List<Map<String, String>> pets = [];
 
-  void _handleMenuSelection(Menu item, int index) {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  
+
+  void _handleMenuSelection(Menu item, int index) async {
     switch (item) {
       case Menu.edit:
-        // Handle edit action
-        Get.to(
-          () => PetProfile(
-            petData: pets[index],
-            onSave: (updatedPet) {
-              setState(() {
-                pets[index] = updatedPet;
-              });
-            },
-          ),
-        );
         break;
+
       case Menu.remove:
-        // Handle remove action
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${pets[index]['name']} removed')),
-        );
-        setState(() {
-          pets.removeAt(index);
-        });
         break;
     }
   }
@@ -54,26 +46,35 @@ class PetListState extends State<PetList> {
               itemCount: pets.length,
               itemBuilder: (context, index) {
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: ListTile(
-                    leading: const Icon(Icons.pets),
+                    leading: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage: (pets[index]['imagePath'] != null &&
+                              pets[index]['imagePath']!.isNotEmpty)
+                          ? FileImage(File(pets[index]['imagePath']!))
+                          : null,
+                      child: (pets[index]['imagePath'] == null ||
+                              pets[index]['imagePath']!.isEmpty)
+                          ? const Icon(Icons.pets, color: Colors.grey)
+                          : null,
+                    ),
                     title: Text(pets[index]['name'] ?? 'Unknown'),
                     subtitle: Text('Age: ${pets[index]['age'] ?? 'Unknown'}'),
                     trailing: PopupMenuButton<Menu>(
                       icon: const Icon(Icons.more_vert),
-                      onSelected: (Menu item) {
-                        _handleMenuSelection(item, index);
-                      },
-                      itemBuilder: (BuildContext context) =>
-                          <PopupMenuEntry<Menu>>[
-                        const PopupMenuItem<Menu>(
+                      onSelected: (item) => _handleMenuSelection(item, index),
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(
                           value: Menu.edit,
                           child: ListTile(
                             leading: Icon(Icons.edit_sharp),
                             title: Text('Edit'),
                           ),
                         ),
-                        const PopupMenuItem<Menu>(
+                        PopupMenuItem(
                           value: Menu.remove,
                           child: ListTile(
                             leading: Icon(Icons.remove),
@@ -88,20 +89,15 @@ class PetListState extends State<PetList> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Get.to(
-            () => PetProfile(
-              petData: null, // Indicate this is a new pet
-              onSave: (newPet) {
-                setState(() {
-                  pets.add(newPet); // Add the new pet to the list
-                });
-              },
-            ),
-          );
+          Get.to(() => PetProfile(
+                petData: null,
+                onSave: (newPet) async {
+                  
+                },
+              ));
         },
-        child: const Icon(Icons.add)
+        child: const Icon(Icons.add),
       ),
-      
     );
   }
 }

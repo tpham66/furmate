@@ -1,4 +1,3 @@
-# Uncomment this line to define a global platform for your project
 platform :ios, '18.2'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
@@ -28,19 +27,28 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  use_frameworks!
+  # Use static frameworks so Flutter can be imported correctly from plugins
+  use_frameworks! :linkage => :static
+  # (optional but usually safe)
+  # use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
   target 'RunnerTests' do
     inherit! :search_paths
   end
 
   pod 'FBSDKLoginKit'
-    
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
+    # Make sure all pods use a supported iOS deployment target
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+    end
+
+    # This is the Flutter helper that wires up the engine correctly
     flutter_additional_ios_build_settings(target)
   end
 end

@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/home/event_page_indicator.dart';
 import 'package:intl/intl.dart';
-import '../widgets/event_sheet.dart';
-import '../services/activities.dart';
+import '../widgets/home/event_sheet.dart';
+import '../models/event.dart';
 
-List<Map<String, String>> events = [
-  {'Pooping': 'Phu'},
-  {'Feeding': 'Ha'},
-  {'Walking': 'Duong'},
-  {'Playing': 'Binh'},
-  {'Visiting vet': 'Son'}
-]; // This is just for hardcode
+import '../widgets/home/event_page_view.dart';
+import '../widgets/home/custom_date.dart';
+import '../widgets/home/custom_divider.dart';
+
+enum Menu { edit, remove }
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -22,8 +19,45 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   final PageController _pageController = PageController(viewportFraction: 0.8);
-
+  List<Map<String, String>> availablePets = [];
+  List<Event> events = [];
   DateTime now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+
+  }
+
+
+  
+
+  void _handleMenuSelection(Menu item, int index) async {
+    switch (item) {
+      case Menu.edit:
+        
+        break;
+
+      case Menu.remove:
+       
+        break;
+    }
+  }
+
+  void showBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => EventSheet(
+        availablePets:
+            availablePets.map((pet) => pet['name'] ?? 'Unnamed').toList(),
+        onSave: (newEvent) async {
+          print(newEvent);
+
+
+        },
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -41,125 +75,28 @@ class HomeState extends State<Home> {
         actions: [
           IconButton(
             icon: const Icon(Icons.event_note),
-            onPressed: () {
-              // Add task
-              print(FirebaseAuth.instance.currentUser?.email ?? 'No user');
-              print(events);
-            },
+            onPressed: () {},
           ),
         ],
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Text.rich(
-              TextSpan(
-                text: DateFormat('EEE ').format(now),
-                style: TextStyle(fontSize: 30),
-                children: <TextSpan>[
-                  TextSpan(
-                    text: DateFormat('MMM d').format(now),
-                    style: TextStyle(
-                        fontWeight: FontWeight.w800, color: Colors.blue),
-                  ),
-                ],
-              ),
-              style:
-                  TextStyle(fontSize: 20), // Default style for the entire text
-            ),
+            CurrentDateHeading(date: now),
 
             // PageView with scaling effect
-            SizedBox(
-              height: 300, // Fixed height for the PageView
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: events.length,
-                itemBuilder: (context, index) {
-                  return AnimatedBuilder(
-                    animation: _pageController,
-                    builder: (context, child) {
-                      double value = 1.0;
-                      if (_pageController.position.haveDimensions) {
-                        value = _pageController.page! - index;
-                        value = (1 - (value.abs() * 0.2)).clamp(0.8, 1.0);
-                      }
-
-                      return Center(
-                        child: SizedBox(
-                          height: Curves.easeOut.transform(value) * 300,
-                          width: Curves.easeOut.transform(value) * 3300,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color:
-                            Colors.primaries[index % Colors.primaries.length],
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            offset: const Offset(0, 4),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Page ${index + 1}',
-                          style: const TextStyle(
-                              fontSize: 24, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+            EventPageView(
+              controller: _pageController,
+              itemCount: events.isEmpty ? 1 : events.length,
             ),
 
             // Smooth Page Indicator
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SmoothPageIndicator(
-                controller: _pageController,
-                count: 5, // Match the PageView's itemCount
-                effect: WormEffect(
-                  activeDotColor: Colors.blue,
-                  dotColor: Colors.grey,
-                  dotHeight: 12,
-                  dotWidth: 12,
-                ),
-              ),
+            EventPageIndicator(
+              pageController: _pageController,
+              count: events.isEmpty ? 1 : events.length,
             ),
 
-            Stack(
-              children: [
-                // Main divider
-                Container(
-                  height: 15, // Divider thickness
-                  color: Colors.grey, // Main divider color
-                ),
-                // Top-to-bottom shadow
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      backgroundBlendMode: BlendMode.screen,
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.grey, // Middle shadow
-                          Colors.black
-                              .withOpacity(0.3), // Transparent in the middle
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            CustomDivider(),
 
             const SizedBox(height: 20),
 
@@ -187,8 +124,22 @@ class HomeState extends State<Home> {
                         const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     child: ListTile(
                       leading: const Icon(Icons.pets),
-                      title: Text(events[index].keys.first),
-                      subtitle: Text(events[index].values.first),
+                      title: Text(events[index].type),
+                      subtitle: Text(
+                          '${events[index].pet} • ${DateFormat('hh:mm a').format(events[index].time)}'),
+                      trailing: PopupMenuButton<Menu>(
+                        icon: Icon(Icons.more_vert),
+                        onSelected: (item) => _handleMenuSelection(item, index),
+                        itemBuilder: (context) => const [
+                          PopupMenuItem(
+                            value: Menu.remove,
+                            child: ListTile(
+                              leading: Icon(Icons.delete),
+                              title: Text('Remove'),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -198,20 +149,6 @@ class HomeState extends State<Home> {
       ),
       floatingActionButton: FloatingActionButton(
           onPressed: showBottomSheet, child: const Icon(Icons.add)),
-    );
-  }
-
-  void showBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => EventSheet(
-        events: null, // Indicate this is a new pet
-        onSave: (newEvent) {
-          setState(() {
-            events.add(newEvent); // Add the new pet to the list
-          });
-        },
-      ),
     );
   }
 }
