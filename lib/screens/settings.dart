@@ -1,11 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:furmate/screens/splashscreen.dart';
+import '../services/settings/enable_notifications.dart';
+import '../widgets/general/error_dialog.dart';
 import 'change_password.dart';
 import 'package:get/get.dart';
 import 'user_profile.dart';
 import '../services/authentication/google_auth_service.dart';
 import '../services/authentication/facebook_auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const List<Widget> units = <Widget>[
   Text('Lb'),
@@ -27,6 +30,16 @@ class SettingsState extends State<Settings> {
   final GoogleAuthService _googleAuthService = GoogleAuthService();
   final FacebookAuthService _facebookAuthService = FacebookAuthService();
 
+
+  Future<void> openEmail() async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'phamduong2604@gmail.com',
+      query: 'subject=FurMate Support',
+    );
+
+    await launchUrl(emailUri);
+  }
   Future<void> _signOut() async {
     User? user = FirebaseAuth.instance.currentUser;
 
@@ -82,11 +95,21 @@ class SettingsState extends State<Settings> {
                 Switch(
                   value: onNoti,
                   activeThumbColor: Colors.red,
-                  onChanged: (bool value) {
+                  onChanged: (bool value) async {
                     // This is called when the user toggles the switch.
-                    setState(() {
-                      onNoti = value;
-                    });
+                    try {
+                      await updateNotificationPreference(value);
+                    } catch (e) {
+                      // Handle error
+                      if (!context.mounted) return;
+                      showDialog(
+                        context: context,
+                        builder: (context) => const ErrorDialog(
+                          title: 'Error',
+                          message: 'Failed to update notification preference',
+                        ),
+                      );
+                    }
                   },
                 )
               ],
@@ -102,7 +125,6 @@ class SettingsState extends State<Settings> {
               children: [
                 Text('Weight Unit'),
                 ToggleButtons(
-                  children: units,
                   isSelected: _selectedUnits,
                   direction: Axis.horizontal,
                   onPressed: (int index) {
@@ -123,6 +145,7 @@ class SettingsState extends State<Settings> {
                     minHeight: 40.0,
                     minWidth: 80.0,
                   ),
+                  children: units,
                 )
               ],
             ),
@@ -141,6 +164,7 @@ class SettingsState extends State<Settings> {
             leading: Icon(Icons.email),
             onTap: () {
               // Navigate to Privacy Settings
+              openEmail();
             },
           ),
           ListTile(

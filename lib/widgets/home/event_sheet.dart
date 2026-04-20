@@ -62,7 +62,7 @@ class EventSheetState extends State<EventSheet> {
                       ? _otherActivity.text
                       : selectedTag.name;
 
-                  if (activity.isEmpty || selectedPet == null || selectedDate == null) {
+                  if (activity.isEmpty || selectedPet == null || selectedDate == null || _person.text.trim().isEmpty) {
                     showDialog(
                       context: context,
                       builder: (context) => const ErrorDialog(
@@ -91,11 +91,11 @@ class EventSheetState extends State<EventSheet> {
           Row(
             children: [
               Container(
-                alignment: Alignment.center,
+                alignment: Alignment.topLeft,
                 height: 50,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 229, 234, 239),
+                  border: Border.all(color: Colors.grey.shade600),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: DropdownBox(
@@ -130,43 +130,51 @@ class EventSheetState extends State<EventSheet> {
                 selectedPet = value;
               });
             },
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Select Pet',
-              border: OutlineInputBorder(),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
             ),
           ),
           const SizedBox(height: 12),
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: Text(selectedDate == null
-                ? 'Select time'
-                : '${selectedDate!.toLocal()}'.split('.')[0]),
-            onTap: () async {
-              final pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2100),
-              );
-              if (pickedDate != null) {
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade600),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: Text(selectedDate == null
+                  ? 'Select time'
+                  : '${selectedDate!.toLocal()}'.split('.')[0]),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              onTap: () async {
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2100),
+                );
+                if (!mounted || pickedDate == null) return;
+
                 final pickedTime = await showTimePicker(
                   context: context,
                   initialTime: TimeOfDay.now(),
                 );
-                if (pickedTime != null) {
-                  setState(() {
-                    selectedDate = DateTime(
-                      pickedDate.year,
-                      pickedDate.month,
-                      pickedDate.day,
-                      pickedTime.hour,
-                      pickedTime.minute,
-                    );
-                  });
-                }
-              }
-            },
+                if (!mounted || pickedTime == null) return;
+
+                setState(() {
+                  selectedDate = DateTime(
+                    pickedDate.year,
+                    pickedDate.month,
+                    pickedDate.day,
+                    pickedTime.hour,
+                    pickedTime.minute,
+                  );
+                });
+              },
+            ),
           ),
+          const SizedBox(height: 12),
           Expanded(
             child: TextField(
               controller: _person,

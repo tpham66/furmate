@@ -52,7 +52,7 @@ class HomeState extends State<Home> {
         }).toList();
       });
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) => const ErrorDialog(
@@ -83,7 +83,7 @@ class HomeState extends State<Home> {
         }).toList();
       });
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) => const ErrorDialog(
@@ -164,7 +164,7 @@ class HomeState extends State<Home> {
               events.sort((a, b) => a.time.compareTo(b.time));
             });
           } catch (e) {
-            if (!context.mounted) return;
+            if (!mounted) return;
             showDialog(
               context: context,
               builder: (context) => const ErrorDialog(

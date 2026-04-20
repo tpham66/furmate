@@ -17,7 +17,7 @@ class CurrentDateHeading extends StatelessWidget {
             text: DateFormat('MMM d').format(date),
             style: const TextStyle(
               fontWeight: FontWeight.w800,
-              color: Colors.blue,
+              color: Color.fromARGB(255, 71, 47, 3),
             ),
           ),
         ],

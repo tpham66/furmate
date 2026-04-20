@@ -9,8 +9,8 @@ class ChangePassword extends StatefulWidget {
 }
 
 class ChangePasswordState extends State<ChangePassword> {
-  TextEditingController _passwordController = TextEditingController();
-  TextEditingController _currPasswordController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _currPasswordController = TextEditingController();
 
   ///Passing a key to access the validate function
   final GlobalKey<FlutterPwValidatorState> validatorKey =
