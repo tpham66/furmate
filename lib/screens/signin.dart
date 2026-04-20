@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:furmate/widgets/interactive_logo.dart';
-import '../services/google_auth_service.dart';
-import '../services/facebook_auth_service.dart';
+import 'package:furmate/widgets/general/interactive_logo.dart';
+import '../services/authentication/google_auth_service.dart';
+import '../services/authentication/facebook_auth_service.dart';
 import 'package:get/get.dart';
-import '../widgets/error_dialog.dart';
+import '../widgets/general/error_dialog.dart';
 import 'package:flutter/material.dart';
 import 'signup.dart';
 import 'main_navigation.dart';
-import '../widgets/button.dart';
+import '../widgets/general/button.dart';
 
 class SignIn extends StatefulWidget {
   const SignIn({super.key});
@@ -64,9 +64,6 @@ class SignInState extends State<SignIn> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 0,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(30.0),
         child: Align(
@@ -172,8 +169,7 @@ class SignInState extends State<SignIn> {
                 onTap: () {
                   Get.to(() => SignIn());
                 },
-                width: 143,
-                height: 57
+                width: 143
               ),
               const SizedBox(height: 20),
               Row(

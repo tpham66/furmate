@@ -4,8 +4,8 @@ import 'package:furmate/screens/splashscreen.dart';
 import 'change_password.dart';
 import 'package:get/get.dart';
 import 'user_profile.dart';
-import '../services/google_auth_service.dart';
-import '../services/facebook_auth_service.dart';
+import '../services/authentication/google_auth_service.dart';
+import '../services/authentication/facebook_auth_service.dart';
 
 const List<Widget> units = <Widget>[
   Text('Lb'),
@@ -81,7 +81,7 @@ class SettingsState extends State<Settings> {
                 Text('Notifications'),
                 Switch(
                   value: onNoti,
-                  activeColor: Colors.red,
+                  activeThumbColor: Colors.red,
                   onChanged: (bool value) {
                     // This is called when the user toggles the switch.
                     setState(() {

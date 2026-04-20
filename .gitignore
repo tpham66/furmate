@@ -43,3 +43,28 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase / local config backups
+google-services.json
+GoogleService-Info.plist
+
+# macOS
+*.lock
+*.tmp
+
+# Xcode
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+
+# Android local machine config
+**/android/local.properties
+**/android/.gradle/
+
+# Coverage
+coverage/
+
+# Generated
+pubspec.lock

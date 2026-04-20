@@ -45,11 +45,13 @@ dependencies:
   flutter_pw_validator: ^1.6.0
   shared_preferences: ^2.0.0
   smooth_page_indicator: ^1.0.0+2
+  uuid: ^4.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.1
+  flutter_lints: ^5.0.0
 
 flutter_icons:
   # android: true

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/activities.dart';
+import '../../services/events/activities.dart';
 
 class DropdownBox extends StatelessWidget {
   final Activity tag; // Current selected activity
