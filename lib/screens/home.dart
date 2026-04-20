@@ -3,10 +3,13 @@ import '../widgets/home/event_page_indicator.dart';
 import 'package:intl/intl.dart';
 import '../widgets/home/event_sheet.dart';
 import '../models/event.dart';
-
+import '../models/pet.dart';
 import '../widgets/home/event_page_view.dart';
 import '../widgets/home/custom_date.dart';
 import '../widgets/home/custom_divider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/general/error_dialog.dart';
 
 enum Menu { edit, remove }
 
@@ -19,27 +22,122 @@ class Home extends StatefulWidget {
 
 class HomeState extends State<Home> {
   final PageController _pageController = PageController(viewportFraction: 0.8);
-  List<Map<String, String>> availablePets = [];
+  List<Pet> pets = [];
   List<Event> events = [];
   DateTime now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-
+    loadPets();
+    loadEvents();
   }
 
+  Future<void> loadPets() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('pets')
+          .get();
+
+      setState(() {
+        pets = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return Pet.fromMap(data);
+        }).toList();
+      });
+    } catch (e) {
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => const ErrorDialog(
+          title: 'Error',
+          message: 'Failed to load pets',
+        ),
+      );
+    }
+  }
   
+  Future<void> loadEvents() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('events')
+          .orderBy('time')
+          .get();
+
+      setState(() {
+        events = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return Event.fromMap(data);
+        }).toList();
+      });
+    } catch (e) {
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => const ErrorDialog(
+          title: 'Error',
+          message: 'Failed to load event',
+        ),
+      );
+    }
+  }
 
   void _handleMenuSelection(Menu item, int index) async {
     switch (item) {
       case Menu.edit:
-        
+        showModalBottomSheet(
+          context: context,
+          builder: (ctx) => EventSheet(
+            availablePets: pets.map((pet) => pet.name).toList(),
+            eventData: events[index],
+            onSave: (updatedEvent) async {
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null) return;
+
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .collection('events')
+                  .doc(updatedEvent.id)
+                  .update(updatedEvent.toMap());
+
+              setState(() {
+                events[index] = updatedEvent;
+                events.sort((a, b) => a.time.compareTo(b.time));
+              });
+            },
+          ),
+        );
         break;
 
       case Menu.remove:
-       
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) return;
+
+        final eventId = events[index].id;
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('events')
+            .doc(eventId)
+            .delete();
+
+        setState(() {
+          events.removeAt(index);
+        });
         break;
     }
   }
@@ -49,11 +147,32 @@ class HomeState extends State<Home> {
       context: context,
       builder: (ctx) => EventSheet(
         availablePets:
-            availablePets.map((pet) => pet['name'] ?? 'Unnamed').toList(),
+            pets.map((pet) => pet.name).toList(),
         onSave: (newEvent) async {
-          print(newEvent);
+          try {
+            final user = FirebaseAuth.instance.currentUser;
+            if (user == null) return;
 
-
+            final docRef = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .collection('events')
+                .add(newEvent.toMap());
+            final savedEvent = newEvent.copyWith(id: docRef.id);
+            setState(() {
+              events.add(savedEvent);
+              events.sort((a, b) => a.time.compareTo(b.time));
+            });
+          } catch (e) {
+            if (!context.mounted) return;
+            showDialog(
+              context: context,
+              builder: (context) => const ErrorDialog(
+                title: 'Error',
+                message: 'Failed to save event',
+              ),
+            );
+          }
         },
       ),
     );
@@ -87,7 +206,7 @@ class HomeState extends State<Home> {
             // PageView with scaling effect
             EventPageView(
               controller: _pageController,
-              itemCount: events.isEmpty ? 1 : events.length,
+              events: events,
             ),
 
             // Smooth Page Indicator
@@ -108,7 +227,7 @@ class HomeState extends State<Home> {
             // Event List
             if (events.isEmpty)
               const Center(
-                  child: Padding(
+                child: Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Text('No events added yet.'),
               ))
@@ -148,7 +267,8 @@ class HomeState extends State<Home> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-          onPressed: showBottomSheet, child: const Icon(Icons.add)),
+          onPressed: showBottomSheet, 
+          child: const Icon(Icons.add)),
     );
   }
 }

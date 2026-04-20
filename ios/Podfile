@@ -1,6 +1,5 @@
-platform :ios, '18.2'
+platform :ios, '18.0'
 
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 project 'Runner', {
@@ -10,16 +9,12 @@ project 'Runner', {
 }
 
 def flutter_root
-  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
-  unless File.exist?(generated_xcode_build_settings_path)
-    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  generated = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  abort "#{generated} must exist." unless File.exist?(generated)
+  File.foreach(generated) do |line|
+    return $1.strip if line =~ /FLUTTER_ROOT\=(.*)/
   end
-
-  File.foreach(generated_xcode_build_settings_path) do |line|
-    matches = line.match(/FLUTTER_ROOT\=(.*)/)
-    return matches[1].strip if matches
-  end
-  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+  abort "FLUTTER_ROOT not found in Generated.xcconfig"
 end
 
 require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
@@ -27,28 +22,26 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 flutter_ios_podfile_setup
 
 target 'Runner' do
-  # Use static frameworks so Flutter can be imported correctly from plugins
   use_frameworks! :linkage => :static
-  # (optional but usually safe)
-  # use_modular_headers!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
   target 'RunnerTests' do
     inherit! :search_paths
   end
-
-  pod 'FBSDKLoginKit'
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    # Make sure all pods use a supported iOS deployment target
     target.build_configurations.each do |config|
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+      # Make ALL pods accept Xcode 16 simulator
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+
+      # Fix LevelDB / gRPC / Abseil module verifier failures
+      config.build_settings['ENABLE_MODULE_VERIFIER'] = 'NO'
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
     end
 
-    # This is the Flutter helper that wires up the engine correctly
     flutter_additional_ios_build_settings(target)
   end
 end

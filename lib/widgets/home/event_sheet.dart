@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:furmate/widgets/general/error_dialog.dart';
 import '../general/dropdown_box.dart';
 import '../../services/events/activities.dart';
+import '../../models/event.dart';
+import 'package:uuid/uuid.dart';
+
 
 class EventSheet extends StatefulWidget {
   final List<String> availablePets;
-  final Function(Map<String, String>) onSave;
+  final Function(Event) onSave;
+  final Event? eventData;
 
   const EventSheet({
     super.key,
     required this.availablePets,
     required this.onSave,
+    this.eventData,
   });
 
   @override
@@ -19,8 +25,21 @@ class EventSheet extends StatefulWidget {
 class EventSheetState extends State<EventSheet> {
   Activity selectedTag = Activity.pooping;
   final TextEditingController _otherActivity = TextEditingController();
+  final TextEditingController _person = TextEditingController();
   String? selectedPet;
   DateTime? selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.eventData != null) {
+      selectedPet = widget.eventData!.pet;
+      selectedDate = widget.eventData!.time;
+      _person.text = widget.eventData!.person;
+      _otherActivity.text = widget.eventData!.type;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +55,7 @@ class EventSheetState extends State<EventSheet> {
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancel', style: TextStyle(color: Colors.red)),
               ),
-              const Text('Add Event', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(widget.eventData == null ? 'Add Event' : 'Edit Event', style: TextStyle(fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () {
                   final activity = _otherActivity.text.isNotEmpty
@@ -44,21 +63,27 @@ class EventSheetState extends State<EventSheet> {
                       : selectedTag.name;
 
                   if (activity.isEmpty || selectedPet == null || selectedDate == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please complete all fields')),
+                    showDialog(
+                      context: context,
+                      builder: (context) => const ErrorDialog(
+                        title: 'Error',
+                        message: 'Please complete all fields',
+                      ),
                     );
                     return;
                   }
 
-                  widget.onSave({
-                    'type': activity,
-                    'pet': selectedPet!,
-                    'time': selectedDate!.toIso8601String(),
-                  });
+                  widget.onSave(Event(
+                    id: widget.eventData?.id ?? const Uuid().v4(),
+                    type: activity,
+                    pet: selectedPet!,
+                    person: _person.text,
+                    time: selectedDate!,
+                  ));
 
                   Navigator.pop(context);
                 },
-                child: const Text('Add', style: TextStyle(color: Colors.blue)),
+                child: Text(widget.eventData == null ? 'Add' : 'Save', style: TextStyle(color: Colors.blue)),
               ),
             ],
           ),
@@ -141,6 +166,15 @@ class EventSheetState extends State<EventSheet> {
                 }
               }
             },
+          ),
+          Expanded(
+            child: TextField(
+              controller: _person,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+                labelText: 'Person',
+              ),
+            ),
           ),
         ],
       ),

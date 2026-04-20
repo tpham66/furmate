@@ -25,13 +25,17 @@ class Pet {
 
   factory Pet.fromMap(Map<String, dynamic> data) {
     return Pet(
-      id: data['id'] ?? Uuid().v4(),
+      id: data['id'] ?? const Uuid().v4(),
       name: data['name'] ?? '',
       gender: data['gender'] ?? '',
-      age: data['age'] ?? 0,
+      age: data['age'] is int
+          ? data['age']
+          : int.tryParse(data['age']?.toString() ?? '') ?? 0,
       species: data['species'] ?? '',
       breed: data['breed'] ?? '',
-      weight: data['weight'] ?? 0,
+      weight: data['weight'] is num
+          ? (data['weight'] as num).toDouble()
+          : double.tryParse(data['weight']?.toString() ?? '') ?? 0,
       note: data['note'] ?? '',
       imagePath: data['imagePath'] ?? '',
     );

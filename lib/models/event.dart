@@ -34,4 +34,20 @@ class Event {
       'time': time.toIso8601String(),
     };
   }
+
+  Event copyWith({
+    String? id,
+    String? type,
+    String? pet,
+    String? person,
+    DateTime? time,
+  }) {
+    return Event(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      pet: pet ?? this.pet,
+      person: person ?? this.person,
+      time: time ?? this.time,
+    );
+  }
 }

@@ -3,6 +3,8 @@ import '../widgets/general/image_picker.dart';
 import '../widgets/general/button.dart';
 import 'package:get/get.dart';
 import 'dart:io';
+import '../models/pet.dart';
+import 'package:uuid/uuid.dart';
 
 const List<Widget> genders = <Widget>[
   Text('Female'),
@@ -10,8 +12,8 @@ const List<Widget> genders = <Widget>[
 ];
 
 class PetProfile extends StatefulWidget {
-  final Map<String, String>? petData; // Null for adding a new pet
-  final Function(Map<String, String>) onSave; // Callback for saving the pet
+  final Pet? petData;
+  final Function(Pet) onSave; // Callback for saving the pet
 
   const PetProfile({super.key, this.petData, required this.onSave});
 
@@ -45,20 +47,17 @@ class PetProfileState extends State<PetProfile> {
 
   void _saveForm() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final data = {
-        'name': _nameController.text,
-        'gender': getGender(_selectedGenders),
-        'age': _ageController.text,
-        'species': _speciesController.text,
-        'breed': _breedController.text,
-        'weight': _weightController.text,
-        'note': _noteController.text,
-        'imagePath': _image?.path ?? '',
-      };
-
-      if (widget.petData != null && widget.petData!['id'] != null) {
-        data['id'] = widget.petData!['id']!;
-      }
+      final data = Pet(
+        id: widget.petData?.id ?? const Uuid().v4(),
+        name: _nameController.text,
+        gender: getGender(_selectedGenders),
+        age: int.tryParse(_ageController.text) ?? 0,
+        species: _speciesController.text,
+        breed: _breedController.text,
+        weight: double.tryParse(_weightController.text) ?? 0,
+        note: _noteController.text,
+        imagePath: _image?.path ?? '',
+      );
 
       widget.onSave(data);
       Get.back(); // Navigate back
@@ -79,22 +78,20 @@ class PetProfileState extends State<PetProfile> {
     super.initState();
     // Initialize controllers with pet data if available
     if (widget.petData != null) {
-      _nameController.text = widget.petData!['name'] ?? '';
-      _ageController.text = widget.petData!['age'] ?? '';
-      _speciesController.text = widget.petData!['species'] ?? '';
-      _breedController.text = widget.petData!['breed'] ?? '';
-      _weightController.text = widget.petData!['weight'] ?? '';
-      _noteController.text = widget.petData!['note'] ?? '';
+      _nameController.text = widget.petData!.name;
+      _ageController.text = widget.petData!.age.toString();
+      _speciesController.text = widget.petData!.species;
+      _breedController.text = widget.petData!.breed;
+      _weightController.text = widget.petData!.weight.toString();
+      _noteController.text = widget.petData!.note;
 
       // Load the image from the saved path
-      if (widget.petData!['imagePath'] != null) {
-        _image = File(widget.petData!['imagePath']!);
-      }
-
+      _image = File(widget.petData!.imagePath);
+    
       // Load the genders
-      if (widget.petData!['gender'] == 'Female') {
+      if (widget.petData!.gender == 'Female') {
         _selectedGenders = [true, false];
-      } else if (widget.petData!['gender'] == 'Male') {
+      } else if (widget.petData!.gender == 'Male') {
         _selectedGenders = [false, true];
       }
     }
