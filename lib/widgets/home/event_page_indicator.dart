@@ -5,8 +5,7 @@ class EventPageIndicator extends StatelessWidget {
   final PageController pageController;
   final int count;
 
-  const EventPageIndicator({
-    Key? key,
+  const EventPageIndicator({super.key,
     required this.pageController,
     required this.count,
   });

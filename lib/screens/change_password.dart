@@ -79,10 +79,10 @@ class ChangePasswordState extends State<ChangePassword> {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 50),
-                child: new TextFormField(
+                child: TextFormField(
                   obscureText: currPasswordVisible,
                   controller: _currPasswordController,
-                  decoration: new InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Current password *',
                     hintText: '********',
                     suffixIcon: IconButton(
@@ -109,10 +109,10 @@ class ChangePasswordState extends State<ChangePassword> {
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 50),
-                child: new TextFormField(
+                child: TextFormField(
                     obscureText: passwordVisible1,
                     controller: _passwordController,
-                    decoration: new InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'New password *',
                       hintText: '********',
                       suffixIcon: IconButton(
@@ -143,7 +143,7 @@ class ChangePasswordState extends State<ChangePassword> {
                 onSuccess: () {
                   print("MATCHED");
                   ScaffoldMessenger.of(context).showSnackBar(
-                      new SnackBar(content: new Text("Password is matched")));
+                      SnackBar(content: Text("Password is matched")));
                 },
                 onFail: () {
                   print("NOT MATCHED");
@@ -152,7 +152,7 @@ class ChangePasswordState extends State<ChangePassword> {
               const SizedBox(height: 20),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 50),
-                child: new TextFormField(
+                child: TextFormField(
                   obscureText: passwordVisible2,
                   keyboardType: TextInputType.visiblePassword,
                   decoration: InputDecoration(

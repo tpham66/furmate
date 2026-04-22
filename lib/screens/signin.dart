@@ -28,8 +28,7 @@ class SignInState extends State<SignIn> {
     String password = passwordController.text;
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
       if (FirebaseAuth.instance.currentUser!.emailVerified) {
         if (!mounted) return;
         Get.offAll(() => MainNavigation());

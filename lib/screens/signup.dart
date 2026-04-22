@@ -46,8 +46,7 @@ class SignUpState extends State<SignUp> {
             'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character.');
       }
       // create new account using firebase authentication
-      UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
