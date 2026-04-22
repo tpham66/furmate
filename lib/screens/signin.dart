@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:furmate/widgets/general/interactive_logo.dart';
 import '../services/authentication/google_auth_service.dart';
-import '../services/authentication/facebook_auth_service.dart';
 import 'package:get/get.dart';
 import '../widgets/general/error_dialog.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +20,6 @@ class SignInState extends State<SignIn> {
   final TextEditingController passwordController = TextEditingController();
 
   final GoogleAuthService _googleAuthService = GoogleAuthService();
-  final FacebookAuthService _facebookAuthService = FacebookAuthService();
 
   bool passwordVisible = false;
 
@@ -214,22 +212,6 @@ class SignInState extends State<SignIn> {
                       }
                     },
                     child: Image.asset('assets/icons/google.png',
-                        width: 30, height: 30),
-                  ),
-                  const SizedBox(width: 20),
-                  GestureDetector(
-                    onTap: () async {
-                      // Sign in with facebook
-                      final userCredential =
-                          await _facebookAuthService.signInWithFacebook();
-                      if (!mounted) return;
-                      if (userCredential != null) {
-                        // Navigate to the next screen
-                        Get.offAll(() =>
-                            MainNavigation()); // Navigate to PetList screen
-                      }
-                    },
-                    child: Image.asset('assets/icons/facebook.png',
                         width: 30, height: 30),
                   ),
                   SizedBox(width: 20),

@@ -7,7 +7,6 @@ import 'change_password.dart';
 import 'package:get/get.dart';
 import 'user_profile.dart';
 import '../services/authentication/google_auth_service.dart';
-import '../services/authentication/facebook_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const List<Widget> units = <Widget>[
@@ -28,7 +27,6 @@ class Settings extends StatefulWidget {
 
 class SettingsState extends State<Settings> {
   final GoogleAuthService _googleAuthService = GoogleAuthService();
-  final FacebookAuthService _facebookAuthService = FacebookAuthService();
 
 
   Future<void> openEmail() async {
@@ -49,9 +47,6 @@ class SettingsState extends State<Settings> {
         switch (providerProfile.providerId) {
           case 'google.com':
             await _googleAuthService.signOutFromGoogle();
-            break;
-          case 'facebook.com':
-            await _facebookAuthService.signOutFromFacebook();
             break;
           default:
             await FirebaseAuth.instance.signOut();
