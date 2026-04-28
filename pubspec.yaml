@@ -46,6 +46,7 @@ dependencies:
   smooth_page_indicator: ^1.0.0+2
   uuid: ^4.2.1
   url_launcher: ^6.3.2
+  in_app_review: any
 
 dev_dependencies:
   flutter_test:

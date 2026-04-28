@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'user_profile.dart';
 import '../services/authentication/google_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:in_app_review/in_app_review.dart';
 
 const List<Widget> units = <Widget>[
   Text('Lb'),
@@ -17,6 +18,8 @@ const List<Widget> units = <Widget>[
 String weightUnit = '';
 List<bool> _selectedUnits = <bool>[true, false];
 bool onNoti = true;
+
+final InAppReview inAppReview = InAppReview.instance;
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -158,15 +161,27 @@ class SettingsState extends State<Settings> {
             title: Text('Contact'),
             leading: Icon(Icons.email),
             onTap: () {
-              // Navigate to Privacy Settings
+              // Navigate to email
               openEmail();
             },
           ),
           ListTile(
             title: Text('Rate FurMate'),
             leading: Icon(Icons.star_rate),
-            onTap: () {
-              // Navigate to Privacy Settings
+            onTap: () async{
+              // Navigate to rating
+              try{
+                await inAppReview.openStoreListing(appStoreId: 'sdfndvkjdfv');
+              } catch (e) {
+                if (!context.mounted) return;
+                showDialog(
+                  context: context,
+                  builder: (context) => const ErrorDialog(
+                    title: 'Error',
+                    message: 'Failed to open review dialog',
+                  ),
+                );
+              }
             },
           ),
           Divider(),

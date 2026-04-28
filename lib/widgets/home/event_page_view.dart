@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/event.dart';
+import '../../data/event.dart';
 import 'dart:math';
 
 final random = Random();

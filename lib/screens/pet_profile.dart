@@ -3,7 +3,7 @@ import '../widgets/general/image_picker.dart';
 import '../widgets/general/button.dart';
 import 'package:get/get.dart';
 import 'dart:io';
-import '../models/pet.dart';
+import '../data/pet.dart';
 import 'package:uuid/uuid.dart';
 
 const List<Widget> genders = <Widget>[

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:furmate/widgets/general/error_dialog.dart';
 import '../general/dropdown_box.dart';
 import '../../services/events/activities.dart';
-import '../../models/event.dart';
+import '../../data/event.dart';
 import 'package:uuid/uuid.dart';
 
 

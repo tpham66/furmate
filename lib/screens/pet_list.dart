@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:furmate/screens/pet_profile.dart';
 import 'package:get/get.dart';
-import '../models/pet.dart';
+import '../data/pet.dart';
 import 'dart:io';
 
 
