@@ -10,6 +10,8 @@ import '../widgets/home/custom_divider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/general/error_dialog.dart';
+import 'dart:async';
+import '../services/settings/enable_notifications.dart';
 
 enum Menu { edit, remove }
 
@@ -21,6 +23,7 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _petsSubscription;
   final PageController _pageController = PageController(viewportFraction: 0.8);
   List<Pet> pets = [];
   List<Event> events = [];
@@ -29,20 +32,33 @@ class HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    loadPets();
+    listenToPets();
     loadEvents();
   }
 
-  Future<void> loadPets() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
+  Future<bool> notificationsEnabled() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
 
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('pets')
-          .get();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    return doc.data()?['notificationsEnabled'] == true;
+  }
+
+  void listenToPets() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    _petsSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
 
       setState(() {
         pets = snapshot.docs.map((doc) {
@@ -51,8 +67,9 @@ class HomeState extends State<Home> {
           return Pet.fromMap(data);
         }).toList();
       });
-    } catch (e) {
+    }, onError: (error) {
       if (!mounted) return;
+
       showDialog(
         context: context,
         builder: (context) => const ErrorDialog(
@@ -60,7 +77,7 @@ class HomeState extends State<Home> {
           message: 'Failed to load pets',
         ),
       );
-    }
+    });
   }
   
   Future<void> loadEvents() async {
@@ -94,14 +111,42 @@ class HomeState extends State<Home> {
     }
   }
 
-  void _handleMenuSelection(Menu item, int index) async {
+  List<Event> get upcomingEvents {
+    final now = DateTime.now();
+
+    return events
+        .where((event) => event.time.isAfter(now))
+        .toList()
+      ..sort((a, b) => a.time.compareTo(b.time));
+  }
+
+  List<Event> get pastEvents {
+    final now = DateTime.now();
+
+    return events
+        .where((event) => !event.time.isAfter(now))
+        .toList()
+      ..sort((a, b) => b.time.compareTo(a.time));
+  }
+
+  String getPetName(Event event) {
+    for (final pet in pets) {
+      if (pet.id == event.petId) {
+        return pet.name;
+      }
+    }
+
+    return event.petName;
+  }
+
+  void _handleMenuSelection(Menu item, Event event) async {
     switch (item) {
       case Menu.edit:
         showModalBottomSheet(
           context: context,
           builder: (ctx) => EventSheet(
-            availablePets: pets.map((pet) => pet.name).toList(),
-            eventData: events[index],
+            availablePets: pets,
+            eventData: event,
             onSave: (updatedEvent) async {
               final user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
@@ -114,9 +159,16 @@ class HomeState extends State<Home> {
                   .update(updatedEvent.toMap());
 
               setState(() {
+                final index = events.indexOf(event);
                 events[index] = updatedEvent;
                 events.sort((a, b) => a.time.compareTo(b.time));
               });
+
+              await NotificationService.instance.cancelEvent(updatedEvent.id);
+
+              if (await notificationsEnabled()) {
+                await NotificationService.instance.scheduleEvent(updatedEvent);
+              }
             },
           ),
         );
@@ -126,8 +178,9 @@ class HomeState extends State<Home> {
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) return;
 
-        final eventId = events[index].id;
+        final eventId = event.id;
 
+        if (!mounted) return;
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -136,8 +189,10 @@ class HomeState extends State<Home> {
             .delete();
 
         setState(() {
-          events.removeAt(index);
+          events.remove(event);
         });
+
+        await NotificationService.instance.cancelEvent(eventId);
         break;
     }
   }
@@ -146,8 +201,7 @@ class HomeState extends State<Home> {
     showModalBottomSheet(
       context: context,
       builder: (ctx) => EventSheet(
-        availablePets:
-            pets.map((pet) => pet.name).toList(),
+        availablePets: pets,
         onSave: (newEvent) async {
           try {
             final user = FirebaseAuth.instance.currentUser;
@@ -159,6 +213,13 @@ class HomeState extends State<Home> {
                 .collection('events')
                 .add(newEvent.toMap());
             final savedEvent = newEvent.copyWith(id: docRef.id);
+            if (await notificationsEnabled()) {
+              try {
+                await NotificationService.instance.scheduleEvent(savedEvent);
+              } catch (e) {
+                debugPrint('Failed to schedule reminder: $e');
+              }
+            }
             setState(() {
               events.add(savedEvent);
               events.sort((a, b) => a.time.compareTo(b.time));
@@ -180,6 +241,7 @@ class HomeState extends State<Home> {
 
   @override
   void dispose() {
+    _petsSubscription?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -207,6 +269,7 @@ class HomeState extends State<Home> {
             EventPageView(
               controller: _pageController,
               events: events,
+              pets: pets,
             ),
 
             // Smooth Page Indicator
@@ -219,37 +282,106 @@ class HomeState extends State<Home> {
 
             const SizedBox(height: 20),
 
-            const Text(
-              'Events',
-              style: TextStyle(fontSize: 30),
-            ),
-
             // Event List
             if (events.isEmpty)
               const Center(
                 child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('No events added yet.'),
-              ))
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('No events added yet.'),
+                ),
+              )
             else
               ListView.builder(
+                padding: const EdgeInsets.all(20),
                 physics:
                     const NeverScrollableScrollPhysics(), // Disable inner scrolling
                 shrinkWrap: true, // Let the ListView fit its children
-                itemCount: events.length,
+                itemCount: upcomingEvents.length + pastEvents.length + 2,
                 itemBuilder: (context, index) {
+                  final upcoming = upcomingEvents;
+                  final past = pastEvents;
+                  if (index == 0) {
+                    return const ListTile(
+                      title: Text(
+                        'Upcoming Events',
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    );
+                  }
+
+                  if (index <= upcoming.length) {
+                    final event = upcoming[index - 1];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
+                      child: ListTile(
+                        leading: const Icon(Icons.pets),
+                        title: Text('${event.type} • ${getPetName(event)}'),
+                        subtitle: Text(
+                            '${DateUtils.isSameDay(event.time, DateTime.now()) ? 'Today' : DateUtils.isSameDay(event.time, DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1)) ? 'Tomorrow' : DateFormat('MMM d').format(event.time)}'
+                            ' • ${DateFormat('hh:mm a').format(event.time)}'),
+                        trailing: PopupMenuButton<Menu>(
+                          icon: const Icon(Icons.more_vert),
+                          onSelected: (item) =>
+                              _handleMenuSelection(item, event),
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(
+                              value: Menu.edit,
+                              child: ListTile(
+                                leading: Icon(Icons.edit),
+                                title: Text('Edit'),
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: Menu.remove,
+                              child: ListTile(
+                                leading: Icon(Icons.delete),
+                                title: Text('Remove'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  
+                  if (index == upcoming.length + 1) {
+                    return const Column(
+                      children: [
+                        SizedBox(height: 20),
+                        Divider(),
+                        ListTile(
+                          title: Text(
+                            'Past Events',
+                            style: TextStyle(fontSize: 20),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  final id = index - upcoming.length - 2;
+                  final event = past[id];
                   return Card(
-                    margin:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    color: Colors.grey.shade300,
                     child: ListTile(
                       leading: const Icon(Icons.pets),
-                      title: Text(events[index].type),
+                      title: Text('${event.type} • ${getPetName(event)}'),
                       subtitle: Text(
-                          '${events[index].pet} • ${DateFormat('hh:mm a').format(events[index].time)}'),
+                          '${DateFormat('MMM d').format(event.time)}'
+                          ' • ${DateFormat('hh:mm a').format(event.time)}'),
                       trailing: PopupMenuButton<Menu>(
-                        icon: Icon(Icons.more_vert),
-                        onSelected: (item) => _handleMenuSelection(item, index),
+                        icon: const Icon(Icons.more_vert),
+                        onSelected: (item) => _handleMenuSelection(item, event),
                         itemBuilder: (context) => const [
+                          PopupMenuItem(
+                            value: Menu.edit,
+                            child: ListTile(
+                              leading: Icon(Icons.edit),
+                              title: Text('Edit'),
+                            ),
+                          ),
                           PopupMenuItem(
                             value: Menu.remove,
                             child: ListTile(

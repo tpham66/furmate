@@ -8,6 +8,7 @@ class Pet {
   final String species;
   final String breed;
   final double weight;
+  final String weightUnit;
   final String note;
   final String imagePath;
 
@@ -19,6 +20,7 @@ class Pet {
     required this.species,
     required this.breed,
     required this.weight,
+    required this.weightUnit,
     required this.note,
     required this.imagePath,
   });
@@ -36,6 +38,7 @@ class Pet {
       weight: data['weight'] is num
           ? (data['weight'] as num).toDouble()
           : double.tryParse(data['weight']?.toString() ?? '') ?? 0,
+      weightUnit: data['weightUnit'] ?? 'kg',
       note: data['note'] ?? '',
       imagePath: data['imagePath'] ?? '',
     );
@@ -50,6 +53,7 @@ class Pet {
       'species': species,
       'breed': breed,
       'weight': weight,
+      'weightUnit': weightUnit,
       'note': note,
       'imagePath': imagePath,
     };
@@ -65,6 +69,7 @@ class Pet {
     double? weight,
     String? note,
     String? imagePath,
+    String? weightUnit,
   }) {
     return Pet(
       id: id ?? this.id,
@@ -74,6 +79,7 @@ class Pet {
       species: species ?? this.species,
       breed: breed ?? this.breed,
       weight: weight ?? this.weight,
+      weightUnit: weightUnit ?? this.weightUnit,
       note: note ?? this.note,
       imagePath: imagePath ?? this.imagePath,
     );

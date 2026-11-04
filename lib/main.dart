@@ -6,14 +6,20 @@ import 'package:furmate/screens/settings.dart';
 import 'firebase_options.dart'; // Import the generated firebase_options.dart file
 import 'screens/splashscreen.dart';
 import 'package:get/get.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/foundation.dart'; // Import foundation for kDebugMode
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform, // Pass the platform-specific Firebase options
+    options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  await FirebaseAppCheck.instance.activate(
+    // Set androidProvider to `AndroidProvider.debug`
+    androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
+  );
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -26,7 +32,7 @@ class MyApp extends StatelessWidget {
       title: 'Pet Tracker',
       theme: ThemeData(
         colorScheme:
-            ColorScheme.fromSeed(seedColor: const Color.fromRGBO(255, 255, 241, 100)),
+            ColorScheme.fromSeed(seedColor: const Color.fromRGBO(255, 255, 241, 0.1)),
         useMaterial3: true,
       ),
       // Establishes named routes for the other pages we have.

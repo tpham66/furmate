@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:furmate/screens/home.dart';
+import 'package:furmate/screens/main_navigation.dart';
 import '../services/authentication/google_auth_service.dart';
 import 'package:get/get.dart';
 import 'signin.dart';
@@ -224,7 +224,7 @@ class SignUpState extends State<SignUp> {
                       if (!mounted) return;
                       if (userCredential != null) {
                         // Navigate to the next screen
-                        Get.offAll(() => Home());
+                        Get.offAll(() => MainNavigation());
                       }
                     },
                     child: Image.asset('assets/icons/google.png',

@@ -3,11 +3,12 @@ import 'package:furmate/widgets/general/error_dialog.dart';
 import '../general/dropdown_box.dart';
 import '../../services/events/activities.dart';
 import '../../data/event.dart';
+import '../../data/pet.dart';
 import 'package:uuid/uuid.dart';
 
 
 class EventSheet extends StatefulWidget {
-  final List<String> availablePets;
+  final List<Pet> availablePets;
   final Function(Event) onSave;
   final Event? eventData;
 
@@ -26,7 +27,7 @@ class EventSheetState extends State<EventSheet> {
   Activity selectedTag = Activity.pooping;
   final TextEditingController _otherActivity = TextEditingController();
   final TextEditingController _person = TextEditingController();
-  String? selectedPet;
+  String? selectedPetId;
   DateTime? selectedDate;
 
   @override
@@ -34,7 +35,7 @@ class EventSheetState extends State<EventSheet> {
     super.initState();
 
     if (widget.eventData != null) {
-      selectedPet = widget.eventData!.pet;
+      selectedPetId = widget.eventData!.petId;
       selectedDate = widget.eventData!.time;
       _person.text = widget.eventData!.person;
       _otherActivity.text = widget.eventData!.type;
@@ -59,10 +60,10 @@ class EventSheetState extends State<EventSheet> {
               TextButton(
                 onPressed: () {
                   final activity = _otherActivity.text.isNotEmpty
-                      ? _otherActivity.text
+                      ? _otherActivity.text.trim()
                       : selectedTag.name;
 
-                  if (activity.isEmpty || selectedPet == null || selectedDate == null || _person.text.trim().isEmpty) {
+                  if (activity.isEmpty || selectedPetId == null || selectedDate == null || _person.text.trim().isEmpty) {
                     showDialog(
                       context: context,
                       builder: (context) => const ErrorDialog(
@@ -73,10 +74,28 @@ class EventSheetState extends State<EventSheet> {
                     return;
                   }
 
+                  final matchingPets = widget.availablePets.where(
+                    (pet) => pet.id == selectedPetId,
+                  ).toList();
+
+                  if (matchingPets.isEmpty) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const ErrorDialog(
+                        title: 'Error',
+                        message: 'Selected pet not found',
+                      ),
+                    );
+                    return;
+                  }
+
+                  final selectedPet = matchingPets.first;
+
                   widget.onSave(Event(
                     id: widget.eventData?.id ?? const Uuid().v4(),
                     type: activity,
-                    pet: selectedPet!,
+                    petId: selectedPet.id,
+                    petName: selectedPet.name,
                     person: _person.text,
                     time: selectedDate!,
                   ));
@@ -121,13 +140,13 @@ class EventSheetState extends State<EventSheet> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            initialValue: selectedPet,
+            initialValue: selectedPetId,
             items: widget.availablePets
-                .map((pet) => DropdownMenuItem(value: pet, child: Text(pet)))
+                .map((pet) => DropdownMenuItem(value: pet.id, child: Text(pet.name)))
                 .toList(),
             onChanged: (value) {
               setState(() {
-                selectedPet = value;
+                selectedPetId = value;
               });
             },
             decoration: InputDecoration(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/event.dart';
+import '../../data/pet.dart';
 import 'dart:math';
 
 final random = Random();
@@ -19,12 +20,23 @@ const pastelPalette = [
 class EventPageView extends StatelessWidget {
   final PageController controller;
   final List<Event> events;
+  final List<Pet> pets;
 
   const EventPageView({
     super.key,
     required this.controller,
     required this.events,
+    required this.pets,
   });
+
+  String getPetName(Event event) {
+    for (final pet in pets) {
+      if (pet.id == event.petId) {
+        return pet.name;
+      }
+    }
+    return event.petName; // Fallback to the event's petName if not found in the list
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +86,7 @@ class EventPageView extends StatelessWidget {
                       ),
                     ),
                   )
-                : _EventCard(event: events[index], index: index),
+                : _EventCard(event: events[index], index: index, petName: getPetName(events[index]))
           );
         },
       ),
@@ -85,10 +97,12 @@ class EventPageView extends StatelessWidget {
 class _EventCard extends StatelessWidget {
   final Event event;
   final int index;
+  final String petName;
 
   const _EventCard({
     required this.event,
-    required this.index,
+    required this.index, 
+    required this.petName,
   });
 
   @override
@@ -130,7 +144,7 @@ class _EventCard extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            '${event.pet}: ${event.type}',
+            '$petName: ${event.type}',
             style: const TextStyle(fontSize: 18, color: Color.fromARGB(255, 58, 58, 58)),
           ),
           const SizedBox(height: 8),
