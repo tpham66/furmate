@@ -1,20 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:furmate/screens/splashscreen.dart';
-import 'change_password.dart';
+import 'package:furmate/screens/signin.dart';
+import '../services/settings/enable_notifications.dart';
+import '../widgets/general/error_dialog.dart';
 import 'package:get/get.dart';
 import 'user_profile.dart';
 import '../services/authentication/google_auth_service.dart';
-import '../services/authentication/facebook_auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:in_app_review/in_app_review.dart';
+import '../services/export/pet_export.dart';
 
-const List<Widget> units = <Widget>[
-  Text('Lb'),
-  Text('Kg'),
-];
-
-String weightUnit = '';
-List<bool> _selectedUnits = <bool>[true, false];
-bool onNoti = true;
+final InAppReview inAppReview = InAppReview.instance;
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -25,29 +22,123 @@ class Settings extends StatefulWidget {
 
 class SettingsState extends State<Settings> {
   final GoogleAuthService _googleAuthService = GoogleAuthService();
-  final FacebookAuthService _facebookAuthService = FacebookAuthService();
 
-  Future<void> _signOut() async {
-    User? user = FirebaseAuth.instance.currentUser;
+  bool onNoti = false;
+  bool isLoading = true;
 
-    if (user != null) {
-      // Check the provider
-      for (var providerProfile in user.providerData) {
-        switch (providerProfile.providerId) {
-          case 'google.com':
-            await _googleAuthService.signOutFromGoogle();
-            break;
-          case 'facebook.com':
-            await _facebookAuthService.signOutFromFacebook();
-            break;
-          default:
-            await FirebaseAuth.instance.signOut();
-        }
-      }
+  @override
+  void initState() {
+    super.initState();
+    loadNotificationPreference();
+  }
+
+  Future<void> loadNotificationPreference() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+      });
+      return;
     }
 
-    // Navigate to the initial screen
-    Get.to(() => SplashScreen());
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!mounted) return;
+
+      setState(() {
+        onNoti = doc.data()?['notificationsEnabled'] == true;
+      });
+    } catch (e) {
+      debugPrint('Failed to load notification preference: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+  Future<void> toggleNotifications(bool value) async {
+    if (isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      if (value) {
+        final granted =
+            await NotificationService.instance.requestPermission();
+
+        if (!granted) {
+          throw Exception('Notification permission denied');
+        }
+      }
+
+      await NotificationService.instance.updateNotificationPreference(value);
+      await NotificationService.instance.syncEventNotifications();
+
+      if (!mounted) return;
+
+      setState(() {
+        onNoti = value;
+      });
+    } catch (e) {
+      debugPrint('Notification error: $e');
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => const ErrorDialog(
+          title: 'Error',
+          message: 'Failed to update notification settings',
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> openEmail() async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'phamduong2604@gmail.com',
+      query: 'subject=FurMate Support',
+    );
+
+    await launchUrl(emailUri);
+  }
+
+  Future<void> _signOut() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        final isGoogleUser = user.providerData.any(
+          (provider) => provider.providerId == 'google.com',
+        );
+
+        if (isGoogleUser) {
+          await _googleAuthService.signOutFromGoogle();
+        }
+      }
+
+      if (!mounted) return;
+
+      Get.offAll(() => SignIn());
+    } catch (e) {
+      debugPrint('Sign out error: $e');
+    }
   }
 
   @override
@@ -66,73 +157,36 @@ class SettingsState extends State<Settings> {
               Get.to(() => UserProfile());
             },
           ),
-          ListTile(
-            title: Text('Password'),
-            leading: Icon(Icons.lock),
-            onTap: () {
-              Get.to(() => ChangePassword());
-            },
-          ),
           Divider(),
           ListTile(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Notifications'),
-                Switch(
-                  value: onNoti,
-                  activeThumbColor: Colors.red,
-                  onChanged: (bool value) {
-                    // This is called when the user toggles the switch.
-                    setState(() {
-                      onNoti = value;
-                    });
-                  },
-                )
-              ],
+            leading: const Icon(Icons.notifications),
+            title: const Text('Notifications'),
+            trailing: Switch(
+              value: onNoti,
+              activeThumbColor: Colors.red,
+              onChanged: isLoading ? null : toggleNotifications,
             ),
-            leading: Icon(Icons.notifications),
-            onTap: () {
-              // Navigate to Privacy Settings
-            },
-          ),
-          ListTile(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Weight Unit'),
-                ToggleButtons(
-                  children: units,
-                  isSelected: _selectedUnits,
-                  direction: Axis.horizontal,
-                  onPressed: (int index) {
-                    setState(() {
-                      // The button that is tapped is set to true, and the others to false.
-                      for (int i = 0; i < _selectedUnits.length; i++) {
-                        _selectedUnits[i] = i == index;
-                      }
-                    });
-                    weightUnit = units[index].toString().substring(6, 8);
-                  },
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  // selectedBorderColor: Colors.red[700],
-                  selectedColor: Colors.white,
-                  fillColor: Colors.red[200],
-                  color: Colors.red[400],
-                  constraints: const BoxConstraints(
-                    minHeight: 40.0,
-                    minWidth: 80.0,
-                  ),
-                )
-              ],
-            ),
-            leading: Icon(Icons.scale),
+            onTap: isLoading
+                ? null
+                : () => toggleNotifications(!onNoti),
           ),
           ListTile(
             title: Text('Export Data'),
             leading: Icon(Icons.download),
             onTap: () {
               // Navigate to Privacy Settings
+              try {
+                ExportService().exportEvents();
+              } catch (e) {
+                if (!context.mounted) return;
+                showDialog(
+                  context: context,
+                  builder: (context) => const ErrorDialog(
+                    title: 'Error',
+                    message: 'Failed to export data',
+                  ),
+                );
+              }
             },
           ),
           Divider(),
@@ -140,14 +194,27 @@ class SettingsState extends State<Settings> {
             title: Text('Contact'),
             leading: Icon(Icons.email),
             onTap: () {
-              // Navigate to Privacy Settings
+              // Navigate to email
+              openEmail();
             },
           ),
           ListTile(
             title: Text('Rate FurMate'),
             leading: Icon(Icons.star_rate),
-            onTap: () {
-              // Navigate to Privacy Settings
+            onTap: () async{
+              // Navigate to rating
+              try{
+                await inAppReview.openStoreListing(appStoreId: 'sdfndvkjdfv');
+              } catch (e) {
+                if (!context.mounted) return;
+                showDialog(
+                  context: context,
+                  builder: (context) => const ErrorDialog(
+                    title: 'Error',
+                    message: 'Failed to open review dialog',
+                  ),
+                );
+              }
             },
           ),
           Divider(),

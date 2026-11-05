@@ -4,15 +4,23 @@ import 'package:furmate/screens/home.dart';
 import 'package:furmate/screens/pet_list.dart';
 import 'package:furmate/screens/settings.dart';
 import 'firebase_options.dart'; // Import the generated firebase_options.dart file
-import 'screens/splashscreen.dart';
+import 'screens/signin.dart';
 import 'package:get/get.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/foundation.dart'; // Import foundation for kDebugMode
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions
-        .currentPlatform, // Pass the platform-specific Firebase options
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+  await FirebaseAppCheck.instance.activate(
+    // Set androidProvider to `AndroidProvider.debug`
+    providerWeb: ReCaptchaEnterpriseProvider('6Lc5yRAuAAAAACGxZ24tGvpU3qpJF9dhETwhEEFA',),
+    providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidDebugProvider(),
+    providerApple: kDebugMode ? const AppleDebugProvider() : const AppleDebugProvider(),
+  );
+
   runApp(const MyApp());
 }
 
@@ -26,17 +34,17 @@ class MyApp extends StatelessWidget {
       title: 'Pet Tracker',
       theme: ThemeData(
         colorScheme:
-            ColorScheme.fromSeed(seedColor: const Color.fromRGBO(255, 255, 241, 100)),
+            ColorScheme.fromSeed(seedColor: const Color.fromRGBO(255, 255, 241, 0.1)),
         useMaterial3: true,
       ),
       // Establishes named routes for the other pages we have.
       getPages: [
-        GetPage(name: '/splashscreen', page: () => const SplashScreen()),
+        GetPage(name: '/splashscreen', page: () => const SignIn()),
         GetPage(name: '/homescreen', page: () => const Home()),
         GetPage(name: '/pet_list', page: () => const PetList()),
         GetPage(name: '/settings', page: () => const Settings())
       ],
-      home: const SplashScreen(),
+      home: const SignIn(),
     );
   }
 }

@@ -9,7 +9,7 @@ class CustomButton extends StatelessWidget {
   final Color borderColor;
 
   const CustomButton({
-    Key? key,
+    super.key,
     required this.label,
     required this.onTap,
     required this.width,
@@ -19,7 +19,7 @@ class CustomButton extends StatelessWidget {
       colors: [Color(0xFFFCE8AD), Color(0xFFDDA853)],
     ),
     this.borderColor = Colors.black,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

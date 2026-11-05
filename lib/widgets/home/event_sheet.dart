@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:furmate/widgets/general/error_dialog.dart';
 import '../general/dropdown_box.dart';
 import '../../services/events/activities.dart';
-import '../../models/event.dart';
+import '../../data/event.dart';
+import '../../data/pet.dart';
 import 'package:uuid/uuid.dart';
 
 
 class EventSheet extends StatefulWidget {
-  final List<String> availablePets;
+  final List<Pet> availablePets;
   final Function(Event) onSave;
   final Event? eventData;
 
@@ -26,7 +27,7 @@ class EventSheetState extends State<EventSheet> {
   Activity selectedTag = Activity.pooping;
   final TextEditingController _otherActivity = TextEditingController();
   final TextEditingController _person = TextEditingController();
-  String? selectedPet;
+  String? selectedPetId;
   DateTime? selectedDate;
 
   @override
@@ -34,7 +35,7 @@ class EventSheetState extends State<EventSheet> {
     super.initState();
 
     if (widget.eventData != null) {
-      selectedPet = widget.eventData!.pet;
+      selectedPetId = widget.eventData!.petId;
       selectedDate = widget.eventData!.time;
       _person.text = widget.eventData!.person;
       _otherActivity.text = widget.eventData!.type;
@@ -59,10 +60,10 @@ class EventSheetState extends State<EventSheet> {
               TextButton(
                 onPressed: () {
                   final activity = _otherActivity.text.isNotEmpty
-                      ? _otherActivity.text
+                      ? _otherActivity.text.trim()
                       : selectedTag.name;
 
-                  if (activity.isEmpty || selectedPet == null || selectedDate == null) {
+                  if (activity.isEmpty || selectedPetId == null || selectedDate == null || _person.text.trim().isEmpty) {
                     showDialog(
                       context: context,
                       builder: (context) => const ErrorDialog(
@@ -73,10 +74,28 @@ class EventSheetState extends State<EventSheet> {
                     return;
                   }
 
+                  final matchingPets = widget.availablePets.where(
+                    (pet) => pet.id == selectedPetId,
+                  ).toList();
+
+                  if (matchingPets.isEmpty) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => const ErrorDialog(
+                        title: 'Error',
+                        message: 'Selected pet not found',
+                      ),
+                    );
+                    return;
+                  }
+
+                  final selectedPet = matchingPets.first;
+
                   widget.onSave(Event(
                     id: widget.eventData?.id ?? const Uuid().v4(),
                     type: activity,
-                    pet: selectedPet!,
+                    petId: selectedPet.id,
+                    petName: selectedPet.name,
                     person: _person.text,
                     time: selectedDate!,
                   ));
@@ -91,11 +110,11 @@ class EventSheetState extends State<EventSheet> {
           Row(
             children: [
               Container(
-                alignment: Alignment.center,
+                alignment: Alignment.topLeft,
                 height: 50,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 229, 234, 239),
+                  border: Border.all(color: Colors.grey.shade600),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: DropdownBox(
@@ -121,52 +140,60 @@ class EventSheetState extends State<EventSheet> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            initialValue: selectedPet,
+            initialValue: selectedPetId,
             items: widget.availablePets
-                .map((pet) => DropdownMenuItem(value: pet, child: Text(pet)))
+                .map((pet) => DropdownMenuItem(value: pet.id, child: Text(pet.name)))
                 .toList(),
             onChanged: (value) {
               setState(() {
-                selectedPet = value;
+                selectedPetId = value;
               });
             },
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Select Pet',
-              border: OutlineInputBorder(),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
             ),
           ),
           const SizedBox(height: 12),
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: Text(selectedDate == null
-                ? 'Select time'
-                : '${selectedDate!.toLocal()}'.split('.')[0]),
-            onTap: () async {
-              final pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2100),
-              );
-              if (pickedDate != null) {
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade600),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: Text(selectedDate == null
+                  ? 'Select time'
+                  : '${selectedDate!.toLocal()}'.split('.')[0]),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              onTap: () async {
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2100),
+                );
+                if (!mounted || pickedDate == null) return;
+
                 final pickedTime = await showTimePicker(
                   context: context,
                   initialTime: TimeOfDay.now(),
                 );
-                if (pickedTime != null) {
-                  setState(() {
-                    selectedDate = DateTime(
-                      pickedDate.year,
-                      pickedDate.month,
-                      pickedDate.day,
-                      pickedTime.hour,
-                      pickedTime.minute,
-                    );
-                  });
-                }
-              }
-            },
+                if (!mounted || pickedTime == null) return;
+
+                setState(() {
+                  selectedDate = DateTime(
+                    pickedDate.year,
+                    pickedDate.month,
+                    pickedDate.day,
+                    pickedTime.hour,
+                    pickedTime.minute,
+                  );
+                });
+              },
+            ),
           ),
+          const SizedBox(height: 12),
           Expanded(
             child: TextField(
               controller: _person,

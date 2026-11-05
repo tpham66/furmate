@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class InteractiveLogo extends StatefulWidget {
+  const InteractiveLogo({super.key});
+
   @override
   InteractiveLogoState createState() => InteractiveLogoState();
 }

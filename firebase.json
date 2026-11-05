@@ -1,1 +1,45 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"furmate-b50c4","appId":"1:434584330980:android:2f4e1c6ad3ac47227142f1","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"furmate-b50c4","appId":"1:434584330980:ios:fc6a411e384569b47142f1","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"furmate-b50c4","configurations":{"android":"1:434584330980:android:2f4e1c6ad3ac47227142f1","ios":"1:434584330980:ios:fc6a411e384569b47142f1"}}}}}}
+
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "furmate-b50c4",
+          "appId": "1:434584330980:android:2f4e1c6ad3ac47227142f1",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "furmate-b50c4",
+          "appId": "1:434584330980:ios:c496f872a0876b987142f1",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "furmate-b50c4",
+          "configurations": {
+            "ios": "1:434584330980:ios:c496f872a0876b987142f1",
+            "web": "1:434584330980:web:5c73f8c9a8d1ce0b7142f1"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

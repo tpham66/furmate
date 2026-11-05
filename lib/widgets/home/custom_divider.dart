@@ -20,7 +20,7 @@ class CustomDivider extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   Colors.grey,
-                  Colors.black.withOpacity(0.3),
+                  Colors.black.withValues(alpha: 0.3),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,

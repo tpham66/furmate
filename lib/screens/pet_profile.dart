@@ -3,12 +3,17 @@ import '../widgets/general/image_picker.dart';
 import '../widgets/general/button.dart';
 import 'package:get/get.dart';
 import 'dart:io';
-import '../models/pet.dart';
+import '../data/pet.dart';
 import 'package:uuid/uuid.dart';
 
 const List<Widget> genders = <Widget>[
   Text('Female'),
   Text('Male'),
+];
+
+const List<Widget> units = <Widget>[
+  Text('Kg'),
+  Text('Lb'),
 ];
 
 class PetProfile extends StatefulWidget {
@@ -34,6 +39,9 @@ class PetProfileState extends State<PetProfile> {
 
   List<bool> _selectedGenders = <bool>[true, false];
 
+  String weightUnit = 'kg';
+  final List<bool> _selectedUnits = [true, false];
+
   File? _image;
 
   Future<void> _pickImage() async {
@@ -49,14 +57,15 @@ class PetProfileState extends State<PetProfile> {
     if (_formKey.currentState?.validate() ?? false) {
       final data = Pet(
         id: widget.petData?.id ?? const Uuid().v4(),
-        name: _nameController.text,
+        name: _nameController.text.trim(),
         gender: getGender(_selectedGenders),
         age: int.tryParse(_ageController.text) ?? 0,
         species: _speciesController.text,
         breed: _breedController.text,
         weight: double.tryParse(_weightController.text) ?? 0,
+        weightUnit: weightUnit.isNotEmpty ? weightUnit : 'kg',
         note: _noteController.text,
-        imagePath: _image?.path ?? '',
+        imagePath: _image?.path ?? widget.petData?.imagePath ?? '',
       );
 
       widget.onSave(data);
@@ -241,16 +250,51 @@ class PetProfileState extends State<PetProfile> {
                 // Weight field with validation
                 ListTile(
                   leading: const Icon(Icons.scale_rounded),
-                  title: TextFormField(
-                    controller: _weightController,
-                    keyboardType: TextInputType.numberWithOptions(),
-                    decoration: const InputDecoration(
-                      labelText: 'Weight',
-                      hintText: 'Enter your pet\'s weight',
-                    ),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _weightController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Weight',
+                            hintText: 'Enter weight',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ToggleButtons(
+                            isSelected: _selectedUnits,
+                            direction: Axis.horizontal,
+                            onPressed: (int index) {
+                              setState(() {
+                                for (int i = 0; i < _selectedUnits.length; i++) {
+                                  _selectedUnits[i] = i == index;
+                                }
+
+                                weightUnit = index == 0 ? 'kg' : 'lbs';
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            selectedColor: Colors.white,
+                            fillColor: Colors.red[200],
+                            color: Colors.red[400],
+                            constraints: const BoxConstraints(
+                              minHeight: 40,
+                              minWidth: 55,
+                            ),
+                            children: units,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-
                 // Care note with validation
                 ListTile(
                   leading: const Icon(Icons.note),
