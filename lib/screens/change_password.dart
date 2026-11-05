@@ -141,12 +141,12 @@ class ChangePasswordState extends State<ChangePassword> {
                 width: 300,
                 height: 200,
                 onSuccess: () {
-                  print("MATCHED");
                   ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("Password is matched")));
                 },
                 onFail: () {
-                  print("NOT MATCHED");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Password does not match")));
                 },
               ),
               const SizedBox(height: 20),

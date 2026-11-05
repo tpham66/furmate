@@ -16,10 +16,11 @@ Future<void> main() async {
   );
   await FirebaseAppCheck.instance.activate(
     // Set androidProvider to `AndroidProvider.debug`
-    androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
+    providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidDebugProvider(),
+    providerApple: kDebugMode ? const AppleDebugProvider() : const AppleDebugProvider(),
   );
-  runApp(MyApp());
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

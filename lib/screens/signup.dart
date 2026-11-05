@@ -213,26 +213,19 @@ class SignUpState extends State<SignUp> {
                 ],
               ),
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () async {
-                      // Sign in with Google
-                      final userCredential =
-                          await _googleAuthService.signInWithGoogle();
-                      if (!mounted) return;
-                      if (userCredential != null) {
-                        // Navigate to the next screen
-                        Get.offAll(() => MainNavigation());
-                      }
-                    },
-                    child: Image.asset('assets/icons/google.png',
-                        width: 30, height: 30),
-                  ),
-                  SizedBox(width: 20),
-                  Image.asset('assets/icons/apple.png', width: 30, height: 30),
-                ],
+              GestureDetector(
+                onTap: () async {
+                  // Sign in with Google
+                  final userCredential =
+                      await _googleAuthService.signInWithGoogle();
+                  if (!mounted) return;
+                  if (userCredential != null) {
+                    // Navigate to the next screen
+                    Get.offAll(() => MainNavigation());
+                  }
+                },
+                child: Image.asset('assets/icons/google.png',
+                    width: 30, height: 30),
               ),
               const SizedBox(height: 7),
               GestureDetector(

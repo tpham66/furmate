@@ -10,6 +10,7 @@ import 'user_profile.dart';
 import '../services/authentication/google_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:in_app_review/in_app_review.dart';
+import '../services/export/pet_export.dart';
 
 final InAppReview inAppReview = InAppReview.instance;
 
@@ -184,6 +185,18 @@ class SettingsState extends State<Settings> {
             leading: Icon(Icons.download),
             onTap: () {
               // Navigate to Privacy Settings
+              try {
+                ExportService().exportEvents();
+              } catch (e) {
+                if (!context.mounted) return;
+                showDialog(
+                  context: context,
+                  builder: (context) => const ErrorDialog(
+                    title: 'Error',
+                    message: 'Failed to export data',
+                  ),
+                );
+              }
             },
           ),
           Divider(),

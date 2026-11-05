@@ -49,11 +49,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAf24gm8G3nnGsGvuPEkhKeF4nNx98WVQE',
-    appId: '1:434584330980:ios:fc6a411e384569b47142f1',
+    appId: '1:434584330980:ios:c496f872a0876b987142f1',
     messagingSenderId: '434584330980',
     projectId: 'furmate-b50c4',
-    storageBucket: 'furmate-b50c4.appspot.com',
+    storageBucket: 'furmate-b50c4.firebasestorage.app',
+    iosClientId: '434584330980-8iqdaisp1e07r6ho2qltgijo7nd6taou.apps.googleusercontent.com',
     iosBundleId: 'com.example.furmate',
   );
-
 }

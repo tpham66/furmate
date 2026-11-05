@@ -12,6 +12,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/general/error_dialog.dart';
 import 'dart:async';
 import '../services/settings/enable_notifications.dart';
+import '../screens/pet_insights.dart';
+import '../widgets/home/calendar.dart';
 
 enum Menu { edit, remove }
 
@@ -251,12 +253,35 @@ class HomeState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         leading:
-            IconButton(onPressed: () {}, icon: const Icon(Icons.ssid_chart)),
+          IconButton(
+            onPressed: () async{
+              try {
+                debugPrint('Starting Gemini request...');
+
+                if (!context.mounted) return;
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AiInsightsPage(),
+                  ),
+                );
+              } catch (e) {
+                debugPrint('AI BUTTON ERROR: $e');
+              }
+          }, icon: const Icon(Icons.ssid_chart)),
         title: const Text('Home'),
         actions: [
           IconButton(
             icon: const Icon(Icons.event_note),
-            onPressed: () {},
+            onPressed: () async{
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PetCalendar(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -264,7 +289,6 @@ class HomeState extends State<Home> {
         child: Column(
           children: [
             CurrentDateHeading(date: now),
-
             // PageView with scaling effect
             EventPageView(
               controller: _pageController,
