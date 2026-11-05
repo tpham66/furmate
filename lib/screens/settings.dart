@@ -1,10 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:furmate/screens/splashscreen.dart';
+import 'package:furmate/screens/signin.dart';
 import '../services/settings/enable_notifications.dart';
 import '../widgets/general/error_dialog.dart';
-import 'change_password.dart';
 import 'package:get/get.dart';
 import 'user_profile.dart';
 import '../services/authentication/google_auth_service.dart';
@@ -132,13 +131,11 @@ class SettingsState extends State<Settings> {
         if (isGoogleUser) {
           await _googleAuthService.signOutFromGoogle();
         }
-
-        await FirebaseAuth.instance.signOut();
       }
 
       if (!mounted) return;
 
-      Get.offAll(() => SplashScreen());
+      Get.offAll(() => SignIn());
     } catch (e) {
       debugPrint('Sign out error: $e');
     }
@@ -158,13 +155,6 @@ class SettingsState extends State<Settings> {
             leading: Icon(Icons.person),
             onTap: () {
               Get.to(() => UserProfile());
-            },
-          ),
-          ListTile(
-            title: Text('Password'),
-            leading: Icon(Icons.lock),
-            onTap: () {
-              Get.to(() => ChangePassword());
             },
           ),
           Divider(),

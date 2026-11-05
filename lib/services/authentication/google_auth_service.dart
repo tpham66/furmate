@@ -1,6 +1,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 class GoogleAuthService {
   String errorMessage = '';
@@ -10,6 +11,13 @@ class GoogleAuthService {
   Future<UserCredential?> signInWithGoogle() async {
     try {
       errorMessage = '';
+
+      // Web: Google popup sign-in flow
+      if (kIsWeb) {
+        return await FirebaseAuth.instance.signInWithPopup(
+          GoogleAuthProvider(),
+        );
+      }
 
       // Initialize Google Sign-In once.
       await _initializeGoogleSignIn();
@@ -48,7 +56,6 @@ class GoogleAuthService {
   Future<void> signOutFromGoogle() async {
     try {
       errorMessage = '';
-
       await _initializeGoogleSignIn();
 
       // Sign out from Firebase and Google.
