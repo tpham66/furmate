@@ -15,12 +15,18 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await FirebaseAppCheck.instance.activate(
-    // Set androidProvider to `AndroidProvider.debug`
-    providerWeb: ReCaptchaEnterpriseProvider('6Lc5yRAuAAAAACGxZ24tGvpU3qpJF9dhETwhEEFA',),
+    providerWeb: kDebugMode
+      ? WebDebugProvider()
+      : ReCaptchaEnterpriseProvider('6Lc5yRAuAAAAACGxZ24tGvpU3qpJF9dhETwhEEFA'),
     providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidDebugProvider(),
     providerApple: kDebugMode ? const AppleDebugProvider() : const AppleDebugProvider(),
   );
-
+try {
+  await FirebaseAppCheck.instance.getToken(true);
+  debugPrint('App Check token request succeeded');
+} catch (e) {
+  debugPrint('App Check token request failed: $e');
+}
   runApp(const MyApp());
 }
 
