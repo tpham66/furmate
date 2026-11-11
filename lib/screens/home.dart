@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:furmate/services/events/calendar_services.dart';
 import '../widgets/home/event_page_indicator.dart';
 import 'package:intl/intl.dart';
 import '../widgets/home/event_sheet.dart';
@@ -195,6 +196,14 @@ class HomeState extends State<Home> {
         });
 
         await NotificationService.instance.cancelEvent(eventId);
+        break;
+
+      case Menu.addToCalendar:
+        try {
+          await CalendarService.addToGoogleCalendar(event);
+        } catch (e) {
+          debugPrint("Error to add to calendar: $e");
+        }
         break;
     }
   }
