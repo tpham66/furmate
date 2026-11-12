@@ -1,10 +1,12 @@
+import 'dart:typed_data';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../widgets/general/image_picker.dart';
 import '../widgets/general/button.dart';
 import 'package:get/get.dart';
-import 'dart:io';
 import '../data/pet.dart';
 import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 const List<Widget> genders = <Widget>[
   Text('Female'),
@@ -42,37 +44,82 @@ class PetProfileState extends State<PetProfile> {
   String weightUnit = 'kg';
   final List<bool> _selectedUnits = [true, false];
 
-  File? _image;
+  Uint8List? _image;
+  String? _existingImageUrl;
 
   Future<void> _pickImage() async {
-    File? selectedImage = await _imagePickerService.pickImageFromGallery();
-    if (selectedImage != null) {
+    try {
+      final selectedImage = await _imagePickerService.pickImageFromGallery();
+      if (selectedImage == null) return;
+      final bytes = await selectedImage.readAsBytes();
+      if (!mounted) return;
       setState(() {
-        _image = selectedImage;
+        _image = bytes;
       });
+    } catch (e) {
+      debugPrint('Image picker error: $e');
     }
   }
 
-  void _saveForm() async {
-    if (_formKey.currentState?.validate() ?? false) {
+  Future<void> _saveForm() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      Get.snackbar('Error', 'Please sign in first.');
+      return;
+    }
+
+    // Reuse the ID when editing an existing pet.
+    final petId = widget.petData?.id ?? const Uuid().v4();
+
+    // Preserve the existing photo if no new one was selected.
+    String imageUrl = widget.petData?.imagePath ?? '';
+
+    try {
+      // Image storage is not available as Firebase Storage is not free
+
+      // Create or update the Pet object.
       final data = Pet(
-        id: widget.petData?.id ?? const Uuid().v4(),
+        id: petId,
         name: _nameController.text.trim(),
         gender: getGender(_selectedGenders),
         age: int.tryParse(_ageController.text) ?? 0,
-        species: _speciesController.text,
-        breed: _breedController.text,
+        species: _speciesController.text.trim(),
+        breed: _breedController.text.trim(),
         weight: double.tryParse(_weightController.text) ?? 0,
-        weightUnit: weightUnit.isNotEmpty ? weightUnit : 'kg',
-        note: _noteController.text,
-        imagePath: _image?.path ?? widget.petData?.imagePath ?? '',
+        weightUnit: weightUnit,
+        note: _noteController.text.trim(),
+        imagePath: imageUrl,
       );
 
+      // Save through your existing callback.
       widget.onSave(data);
-      Get.back(); // Navigate back
-    } else {}
-  }
 
+      if (!mounted) return;
+
+      Get.back();
+    } on FirebaseException catch (e) {
+      debugPrint('Firebase Storage error: ${e.code} - ${e.message}');
+
+      if (!mounted) return;
+
+      Get.snackbar(
+        'Save Failed',
+        e.message ?? 'Unable to upload pet image.',
+      );
+    } catch (e) {
+      debugPrint('Failed to save pet: $e');
+
+      if (!mounted) return;
+
+      Get.snackbar('Error', 'Failed to save pet: $e');
+    }
+  }
+  
   String getGender(List<bool> genders) {
     if (genders[0]) {
       return 'Female';
@@ -95,8 +142,7 @@ class PetProfileState extends State<PetProfile> {
       _noteController.text = widget.petData!.note;
 
       // Load the image from the saved path
-      _image = File(widget.petData!.imagePath);
-    
+      _existingImageUrl = widget.petData!.imagePath;
       // Load the genders
       if (widget.petData!.gender == 'Female') {
         _selectedGenders = [true, false];
@@ -125,11 +171,20 @@ class PetProfileState extends State<PetProfile> {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.grey.shade200,
-                      backgroundImage: (_image != null && _image!.existsSync())
-                          ? FileImage(_image!)
-                          : null,
-                      child: (_image == null || !_image!.existsSync())
-                          ? const Icon(Icons.pets, size: 50, color: Colors.grey)
+                      backgroundImage: _image != null
+                          ? MemoryImage(_image!)
+                          : (_existingImageUrl != null &&
+                                  _existingImageUrl!.startsWith('https://'))
+                              ? NetworkImage(_existingImageUrl!)
+                              : null,
+                      child: _image == null &&
+                              (_existingImageUrl == null ||
+                                  !_existingImageUrl!.startsWith('https://'))
+                          ? const Icon(
+                              Icons.pets,
+                              size: 50,
+                              color: Colors.grey,
+                            )
                           : null,
                     ),
                     Positioned(

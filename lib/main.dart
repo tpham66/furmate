@@ -42,6 +42,18 @@ class MyApp extends StatelessWidget {
         colorScheme:
             ColorScheme.fromSeed(seedColor: const Color.fromRGBO(255, 255, 241, 0.1)),
         useMaterial3: true,
+        iconButtonTheme: IconButtonThemeData(
+          style: ButtonStyle(
+            overlayColor: WidgetStateProperty.resolveWith<Color?>(
+              (states) {
+                if (states.contains(WidgetState.hovered)) {
+                  return const Color(0xFFFCE8AD); // Hover color
+                }
+                return null; // Default color
+              }
+            ),
+          ),
+        ),
       ),
       // Establishes named routes for the other pages we have.
       getPages: [

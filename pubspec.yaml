@@ -55,6 +55,7 @@ dependencies:
   table_calendar: ^3.3.0
   share_plus: ^13.3.1
   path_provider: ^2.1.6
+  firebase_storage: ^13.6.0
 
 dev_dependencies:
   flutter_test:

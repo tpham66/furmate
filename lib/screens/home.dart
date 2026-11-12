@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:furmate/services/events/calendar_services.dart';
 import '../widgets/home/event_page_indicator.dart';
-import 'package:intl/intl.dart';
 import '../widgets/home/event_sheet.dart';
 import '../data/event.dart';
 import '../data/pet.dart';
@@ -15,8 +14,12 @@ import 'dart:async';
 import '../services/settings/enable_notifications.dart';
 import '../screens/pet_insights.dart';
 import '../widgets/home/calendar.dart';
+<<<<<<< HEAD
 
 enum Menu { edit, remove, addToCalendar }
+=======
+import '../widgets/home/event_card.dart';
+>>>>>>> 48cb8c5 (fix image picker)
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -142,9 +145,9 @@ class HomeState extends State<Home> {
     return event.petName;
   }
 
-  void _handleMenuSelection(Menu item, Event event) async {
+  void _handleMenuSelection(EventCardAction item, Event event) async {
     switch (item) {
-      case Menu.edit:
+      case EventCardAction.edit:
         showModalBottomSheet(
           context: context,
           builder: (ctx) => EventSheet(
@@ -177,7 +180,7 @@ class HomeState extends State<Home> {
         );
         break;
 
-      case Menu.remove:
+      case EventCardAction.remove:
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) return;
 
@@ -278,7 +281,9 @@ class HomeState extends State<Home> {
               } catch (e) {
                 debugPrint('AI BUTTON ERROR: $e');
               }
-          }, icon: const Icon(Icons.ssid_chart)),
+          }, 
+          icon: const Icon(Icons.insights),
+        ),
         title: const Text('Home'),
         actions: [
           IconButton(
@@ -340,6 +345,7 @@ class HomeState extends State<Home> {
                     );
                   }
 
+<<<<<<< HEAD
                   if (index <= upcomingEvents.length) {
                     final event = upcomingEvents[index - 1];
                     return Card(
@@ -373,6 +379,14 @@ class HomeState extends State<Home> {
                           ],
                         ),
                       ),
+=======
+                  if (index <= upcoming.length) {
+                    final event = upcoming[index - 1];
+                    return EventCard(
+                      event: event,
+                      petName: getPetName(event),
+                      onSelected: (action) => _handleMenuSelection(action, event),
+>>>>>>> 48cb8c5 (fix image picker)
                     );
                   }
                   
@@ -391,6 +405,7 @@ class HomeState extends State<Home> {
                     );
                   }
 
+<<<<<<< HEAD
                   final id = index - upcomingEvents.length - 2;
                   final event = pastEvents[id];
                   return Card(
@@ -423,6 +438,15 @@ class HomeState extends State<Home> {
                         ],
                       ),
                     ),
+=======
+                  final id = index - upcoming.length - 2;
+                  final event = past[id];
+                  return EventCard(
+                    event: event,
+                    petName: getPetName(event),
+                    isPast: true,
+                    onSelected: (action) => _handleMenuSelection(action, event),
+>>>>>>> 48cb8c5 (fix image picker)
                   );
                 },
               ),
