@@ -42,7 +42,7 @@ Designed for both **iOS and web**, FurMate provides a simple, intuitive interfac
 - Store pet profiles and event records in Cloud Firestore.
 - Access synchronized account data across supported devices.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Category | Technologies |
 |---|---|
@@ -58,7 +58,7 @@ Designed for both **iOS and web**, FurMate provides a simple, intuitive interfac
 | Navigation | GetX |
 | UI | Flutter Material Design |
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 furmate/
@@ -81,7 +81,7 @@ furmate/
 └── pubspec.yaml
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
