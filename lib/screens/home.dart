@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:furmate/services/events/calendar_services.dart';
 import '../widgets/home/event_page_indicator.dart';
-import 'package:intl/intl.dart';
 import '../widgets/home/event_sheet.dart';
 import '../data/event.dart';
 import '../data/pet.dart';
@@ -15,6 +14,7 @@ import 'dart:async';
 import '../services/settings/enable_notifications.dart';
 import '../screens/pet_insights.dart';
 import '../widgets/home/calendar.dart';
+import '../widgets/home/event_card.dart';
 
 enum Menu { edit, remove, addToCalendar }
 
@@ -142,9 +142,9 @@ class HomeState extends State<Home> {
     return event.petName;
   }
 
-  void _handleMenuSelection(Menu item, Event event) async {
+  void _handleMenuSelection(EventCardAction item, Event event) async {
     switch (item) {
-      case Menu.edit:
+      case EventCardAction.edit:
         showModalBottomSheet(
           context: context,
           builder: (ctx) => EventSheet(
@@ -177,7 +177,7 @@ class HomeState extends State<Home> {
         );
         break;
 
-      case Menu.remove:
+      case EventCardAction.remove:
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) return;
 
@@ -198,7 +198,7 @@ class HomeState extends State<Home> {
         await NotificationService.instance.cancelEvent(eventId);
         break;
 
-      case Menu.addToCalendar:
+      case EventCardAction.addToCalendar:
         try {
           await CalendarService.addToGoogleCalendar(event);
         } catch (e) {
@@ -278,7 +278,9 @@ class HomeState extends State<Home> {
               } catch (e) {
                 debugPrint('AI BUTTON ERROR: $e');
               }
-          }, icon: const Icon(Icons.ssid_chart)),
+          }, 
+          icon: const Icon(Icons.insights),
+        ),
         title: const Text('Home'),
         actions: [
           IconButton(
@@ -342,37 +344,10 @@ class HomeState extends State<Home> {
 
                   if (index <= upcomingEvents.length) {
                     final event = upcomingEvents[index - 1];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 8),
-                      child: ListTile(
-                        leading: const Icon(Icons.pets),
-                        title: Text('${event.type} • ${getPetName(event)}'),
-                        subtitle: Text(
-                            '${DateUtils.isSameDay(event.time, DateTime.now()) ? 'Today' : DateUtils.isSameDay(event.time, DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1)) ? 'Tomorrow' : DateFormat('MMM d').format(event.time)}'
-                            ' • ${DateFormat('hh:mm a').format(event.time)}'),
-                        trailing: PopupMenuButton<Menu>(
-                          icon: const Icon(Icons.more_vert),
-                          onSelected: (item) =>
-                              _handleMenuSelection(item, event),
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(
-                              value: Menu.edit,
-                              child: ListTile(
-                                leading: Icon(Icons.edit),
-                                title: Text('Edit'),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: Menu.remove,
-                              child: ListTile(
-                                leading: Icon(Icons.delete),
-                                title: Text('Remove'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    return EventCard(
+                      event: event,
+                      petName: getPetName(event),
+                      onSelected: (action) => _handleMenuSelection(action, event),
                     );
                   }
                   
@@ -393,36 +368,11 @@ class HomeState extends State<Home> {
 
                   final id = index - upcomingEvents.length - 2;
                   final event = pastEvents[id];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    color: Colors.grey.shade300,
-                    child: ListTile(
-                      leading: const Icon(Icons.pets),
-                      title: Text('${event.type} • ${getPetName(event)}'),
-                      subtitle: Text(
-                          '${DateFormat('MMM d').format(event.time)}'
-                          ' • ${DateFormat('hh:mm a').format(event.time)}'),
-                      trailing: PopupMenuButton<Menu>(
-                        icon: const Icon(Icons.more_vert),
-                        onSelected: (item) => _handleMenuSelection(item, event),
-                        itemBuilder: (context) => const [
-                          PopupMenuItem(
-                            value: Menu.edit,
-                            child: ListTile(
-                              leading: Icon(Icons.edit),
-                              title: Text('Edit'),
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: Menu.remove,
-                            child: ListTile(
-                              leading: Icon(Icons.delete),
-                              title: Text('Remove'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  return EventCard(
+                    event: event,
+                    petName: getPetName(event),
+                    isPast: true,
+                    onSelected: (action) => _handleMenuSelection(action, event),
                   );
                 },
               ),
