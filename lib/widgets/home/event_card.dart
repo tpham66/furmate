@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../data/event.dart';
 
-enum EventCardAction { edit, remove }
+enum EventCardAction { edit, remove, addToCalendar }
 
 class EventCard extends StatelessWidget {
   final Event event;
@@ -90,6 +90,12 @@ class EventCard extends StatelessWidget {
               leadingIcon: const Icon(Icons.delete),
               child: const Text('Remove'),
             ),
+            MenuItemButton(
+              onPressed: () =>
+              onSelected(EventCardAction.addToCalendar),
+              leadingIcon: const Icon(Icons.calendar_month),
+              child: const Text('Add to Google Calendar'),
+            )
           ],
         ),
       ),

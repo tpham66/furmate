@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../widgets/general/image_picker.dart';
 import '../widgets/general/button.dart';

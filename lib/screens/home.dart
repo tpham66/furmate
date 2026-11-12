@@ -14,12 +14,9 @@ import 'dart:async';
 import '../services/settings/enable_notifications.dart';
 import '../screens/pet_insights.dart';
 import '../widgets/home/calendar.dart';
-<<<<<<< HEAD
+import '../widgets/home/event_card.dart';
 
 enum Menu { edit, remove, addToCalendar }
-=======
-import '../widgets/home/event_card.dart';
->>>>>>> 48cb8c5 (fix image picker)
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -201,7 +198,7 @@ class HomeState extends State<Home> {
         await NotificationService.instance.cancelEvent(eventId);
         break;
 
-      case Menu.addToCalendar:
+      case EventCardAction.addToCalendar:
         try {
           await CalendarService.addToGoogleCalendar(event);
         } catch (e) {
@@ -345,48 +342,12 @@ class HomeState extends State<Home> {
                     );
                   }
 
-<<<<<<< HEAD
                   if (index <= upcomingEvents.length) {
                     final event = upcomingEvents[index - 1];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 8),
-                      child: ListTile(
-                        leading: const Icon(Icons.pets),
-                        title: Text('${event.type} • ${getPetName(event)}'),
-                        subtitle: Text(
-                            '${DateUtils.isSameDay(event.time, DateTime.now()) ? 'Today' : DateUtils.isSameDay(event.time, DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day + 1)) ? 'Tomorrow' : DateFormat('MMM d').format(event.time)}'
-                            ' • ${DateFormat('hh:mm a').format(event.time)}'),
-                        trailing: PopupMenuButton<Menu>(
-                          icon: const Icon(Icons.more_vert),
-                          onSelected: (item) =>
-                              _handleMenuSelection(item, event),
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(
-                              value: Menu.edit,
-                              child: ListTile(
-                                leading: Icon(Icons.edit),
-                                title: Text('Edit'),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: Menu.remove,
-                              child: ListTile(
-                                leading: Icon(Icons.delete),
-                                title: Text('Remove'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-=======
-                  if (index <= upcoming.length) {
-                    final event = upcoming[index - 1];
                     return EventCard(
                       event: event,
                       petName: getPetName(event),
                       onSelected: (action) => _handleMenuSelection(action, event),
->>>>>>> 48cb8c5 (fix image picker)
                     );
                   }
                   
@@ -405,48 +366,13 @@ class HomeState extends State<Home> {
                     );
                   }
 
-<<<<<<< HEAD
                   final id = index - upcomingEvents.length - 2;
                   final event = pastEvents[id];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    color: Colors.grey.shade300,
-                    child: ListTile(
-                      leading: const Icon(Icons.pets),
-                      title: Text('${event.type} • ${getPetName(event)}'),
-                      subtitle: Text(
-                          '${DateFormat('MMM d').format(event.time)}'
-                          ' • ${DateFormat('hh:mm a').format(event.time)}'),
-                      trailing: PopupMenuButton<Menu>(
-                        icon: const Icon(Icons.more_vert),
-                        onSelected: (item) => _handleMenuSelection(item, event),
-                        itemBuilder: (context) => const [
-                          PopupMenuItem(
-                            value: Menu.edit,
-                            child: ListTile(
-                              leading: Icon(Icons.edit),
-                              title: Text('Edit'),
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: Menu.remove,
-                            child: ListTile(
-                              leading: Icon(Icons.delete),
-                              title: Text('Remove'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-=======
-                  final id = index - upcoming.length - 2;
-                  final event = past[id];
                   return EventCard(
                     event: event,
                     petName: getPetName(event),
                     isPast: true,
                     onSelected: (action) => _handleMenuSelection(action, event),
->>>>>>> 48cb8c5 (fix image picker)
                   );
                 },
               ),
