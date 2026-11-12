@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:furmate/services/events/calendar_services.dart';
 import '../widgets/home/event_page_indicator.dart';
 import 'package:intl/intl.dart';
 import '../widgets/home/event_sheet.dart';
@@ -15,7 +16,7 @@ import '../services/settings/enable_notifications.dart';
 import '../screens/pet_insights.dart';
 import '../widgets/home/calendar.dart';
 
-enum Menu { edit, remove }
+enum Menu { edit, remove, addToCalendar }
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -196,6 +197,14 @@ class HomeState extends State<Home> {
 
         await NotificationService.instance.cancelEvent(eventId);
         break;
+
+      case Menu.addToCalendar:
+        try {
+          await CalendarService.addToGoogleCalendar(event);
+        } catch (e) {
+          debugPrint("Error to add to calendar: $e");
+        }
+        break;
     }
   }
 
@@ -292,14 +301,14 @@ class HomeState extends State<Home> {
             // PageView with scaling effect
             EventPageView(
               controller: _pageController,
-              events: events,
+              events: upcomingEvents,
               pets: pets,
             ),
 
             // Smooth Page Indicator
             EventPageIndicator(
               pageController: _pageController,
-              count: events.isEmpty ? 1 : events.length,
+              count: upcomingEvents.isEmpty ? 1 : upcomingEvents.length,
             ),
 
             CustomDivider(),
@@ -322,8 +331,6 @@ class HomeState extends State<Home> {
                 shrinkWrap: true, // Let the ListView fit its children
                 itemCount: upcomingEvents.length + pastEvents.length + 2,
                 itemBuilder: (context, index) {
-                  final upcoming = upcomingEvents;
-                  final past = pastEvents;
                   if (index == 0) {
                     return const ListTile(
                       title: Text(
@@ -333,8 +340,8 @@ class HomeState extends State<Home> {
                     );
                   }
 
-                  if (index <= upcoming.length) {
-                    final event = upcoming[index - 1];
+                  if (index <= upcomingEvents.length) {
+                    final event = upcomingEvents[index - 1];
                     return Card(
                       margin: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 8),
@@ -369,7 +376,7 @@ class HomeState extends State<Home> {
                     );
                   }
                   
-                  if (index == upcoming.length + 1) {
+                  if (index == upcomingEvents.length + 1) {
                     return const Column(
                       children: [
                         SizedBox(height: 20),
@@ -384,8 +391,8 @@ class HomeState extends State<Home> {
                     );
                   }
 
-                  final id = index - upcoming.length - 2;
-                  final event = past[id];
+                  final id = index - upcomingEvents.length - 2;
+                  final event = pastEvents[id];
                   return Card(
                     margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     color: Colors.grey.shade300,
