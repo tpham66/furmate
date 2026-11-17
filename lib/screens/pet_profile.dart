@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import '../widgets/general/image_picker.dart';
 import '../widgets/general/button.dart';
 import 'package:get/get.dart';
@@ -67,10 +67,7 @@ class PetProfileState extends State<PetProfile> {
 
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user == null) {
-      Get.snackbar('Error', 'Please sign in first.');
-      return;
-    }
+    if (user == null) return;
 
     // Reuse the ID when editing an existing pet.
     final petId = widget.petData?.id ?? const Uuid().v4();

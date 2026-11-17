@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:furmate/screens/pet_dashboard.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:furmate/screens/pet_profile.dart';
 import 'package:get/get.dart';
 import '../data/pet.dart';
@@ -92,7 +93,7 @@ class PetListState extends State<PetList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pet List'),
+        title: const Text('Mates'),
       ),
       body: pets.isEmpty
           ? const Center(child: Text('No pets added yet.'))
@@ -103,6 +104,12 @@ class PetListState extends State<PetList> {
                   margin:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: ListTile(
+                    onTap: () {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (context) => PetDashboard(pet: pets[index]))
+                      );
+                    },
                     leading: CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.grey.shade200,

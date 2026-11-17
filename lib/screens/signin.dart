@@ -1,8 +1,6 @@
 import 'package:furmate/widgets/general/interactive_logo.dart';
 import '../services/authentication/google_auth_service.dart';
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
-import 'main_navigation.dart';
+import 'package:material_ui/material_ui.dart';
 import '../widgets/general/button.dart';
 
 class SignIn extends StatefulWidget {
@@ -48,8 +46,7 @@ class SignInState extends State<SignIn> {
                       if (!mounted) return;
                       if (userCredential != null) {
                         // Navigate to the next screen
-                        Get.offAll(() =>
-                            MainNavigation()); // Navigate to PetList screen
+                        Navigator.pushNamedAndRemoveUntil(context, '/homescreen', (route) => false);
                       }
                     },
                     label: 'Sign in with Google',

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:furmate/widgets/general/error_dialog.dart';
 import '../general/dropdown_box.dart';
 import '../../services/events/activities.dart';
