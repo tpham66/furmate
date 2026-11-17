@@ -23,6 +23,7 @@ class PetDashboardState extends State<PetDashboard> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.pet.name),
+          
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
