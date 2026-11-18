@@ -3,10 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:furmate/screens/pet_dashboard.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:furmate/screens/pet_profile.dart';
-import 'package:get/get.dart';
 import '../data/pet.dart';
 import 'dart:io';
-
 
 enum Menu { edit, remove }
 
@@ -38,54 +36,109 @@ class PetListState extends State<PetList> {
       .get();
 
     setState(() {
-      pets = snapshot.docs.map((doc) {
-        final data = doc.data();
-        data['id'] = doc.id;
-        return Pet.fromMap(data);
-      }).toList();
+      pets = snapshot.docs
+        .where((doc) => doc.data()['isDeleted'] != true)
+        .map((doc) {
+          return Pet.fromMap({
+            ...doc.data(),
+            'id': doc.id,
+          });
+        })
+        .toList();
     });
   }
 
   void _handleMenuSelection(Menu item, int index) async {
     switch (item) {
       case Menu.edit:
-        Get.to(() => PetProfile(
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PetProfile(
               petData: pets[index],
               onSave: (updatedPet) async {
-                final user = FirebaseAuth.instance.currentUser;
-                if (user == null) return;
-
-                await FirebaseFirestore.instance
+                final petRef = FirebaseFirestore.instance
                     .collection('users')
-                    .doc(user.uid)
+                    .doc(FirebaseAuth.instance.currentUser!.uid)
                     .collection('pets')
-                    .doc(updatedPet.id)
-                    .update(updatedPet.toMap());
-
-                setState(() {
-                  pets[index] = updatedPet;
-                });
+                    .doc(updatedPet.id);
+                await petRef.set(
+                  updatedPet.toMap(),
+                  SetOptions(merge: true),
+                );
               },
-            ));
+            ),
+          ),
+        );
+        
         break;
 
       case Menu.remove:
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) return;
-
-        final petId = pets[index].id;
-
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('pets')
-            .doc(petId)
-            .delete();
-
-        setState(() {
-          pets.removeAt(index);
-        });
+        _confirmDelete(pets[index]);
         break;
+    }
+  }
+
+  Future<void> deletePet(Pet pet) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('pets')
+          .doc(pet.id)
+          .update({
+        'isDeleted': true,
+        'deletedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Failed to delete pet: $e');
+    }
+  }
+
+  Future<void> _confirmDelete(Pet pet) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete ${pet.name}?'),
+        content: const Text(
+          'This pet will be removed from your active pets. '
+          'Its information and activity history will be securely retained, '
+          'but won''t be visible in the app. '
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await deletePet(pet);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${pet.name} has been archived'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to archive pet: $e')),
+      );
     }
   }
 
@@ -98,6 +151,7 @@ class PetListState extends State<PetList> {
       body: pets.isEmpty
           ? const Center(child: Text('No pets added yet.'))
           : ListView.builder(
+            padding: EdgeInsets.all(20),
               itemCount: pets.length,
               itemBuilder: (context, index) {
                 return Card(
@@ -148,23 +202,21 @@ class PetListState extends State<PetList> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Get.to(() => PetProfile(
-            petData: null,
-            onSave: (newPet) async {
-              final user = FirebaseAuth.instance.currentUser;
-              if (user == null) return;
-
-              final docRef = await FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(user.uid)
-                  .collection('pets')
-                  .add(newPet.toMap());
-              final savedPet = newPet.copyWith(id: docRef.id);
-              setState(() {
-                pets.add(savedPet);
-              });
-            },
-          ));
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PetProfile(
+                onSave: (pet) async {
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser!.uid)
+                      .collection('pets')
+                      .doc(pet.id)
+                      .set(pet.toMap());
+                }
+              )
+            )
+          );
         },
         child: const Icon(Icons.add),
       ),

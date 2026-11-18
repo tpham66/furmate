@@ -20,13 +20,13 @@ Future<void> main() async {
     providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidDebugProvider(),
     providerApple: kDebugMode ? const AppleDebugProvider() : const AppleDebugProvider(),
   );
-try {
-  await FirebaseAppCheck.instance.getToken(true);
-  debugPrint('App Check token request succeeded');
-} catch (e) {
-  debugPrint('App Check token request failed: $e');
-}
-  runApp(const MyApp());
+  try {
+    await FirebaseAppCheck.instance.getToken(true);
+    debugPrint('App Check token request succeeded');
+  } catch (e) {
+    debugPrint('App Check token request failed: $e');
+  }
+    runApp(const MyApp());
 }
 
 

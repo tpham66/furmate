@@ -64,11 +64,15 @@ class HomeState extends State<Home> {
       if (!mounted) return;
 
       setState(() {
-        pets = snapshot.docs.map((doc) {
-          final data = doc.data();
-          data['id'] = doc.id;
-          return Pet.fromMap(data);
-        }).toList();
+        pets = snapshot.docs
+          .where((doc) => doc.data()['isDeleted'] != true)
+          .map((doc) {
+            return Pet.fromMap({
+              ...doc.data(),
+              'id': doc.id,
+            });
+          })
+          .toList();
       });
     }, onError: (error) {
       if (!mounted) return;
@@ -116,18 +120,22 @@ class HomeState extends State<Home> {
 
   List<Event> get upcomingEvents {
     final now = DateTime.now();
+    final activePetIds = pets.map((pet) => pet.id).toSet();
 
     return events
-        .where((event) => event.time.isAfter(now))
+        .where((event) => event.time.isAfter(now) && 
+        activePetIds.contains(event.petId))
         .toList()
       ..sort((a, b) => a.time.compareTo(b.time));
   }
 
   List<Event> get pastEvents {
     final now = DateTime.now();
+    final activePetIds = pets.map((pet) => pet.id).toSet();
 
     return events
-        .where((event) => !event.time.isAfter(now))
+        .where((event) => !event.time.isAfter(now) &&
+        activePetIds.contains(event.petId))
         .toList()
       ..sort((a, b) => b.time.compareTo(a.time));
   }
@@ -261,39 +269,50 @@ class HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 80,
+        leadingWidth: 60,
         leading:
-          IconButton(
-            onPressed: () async{
-              try {
-                debugPrint('Starting Gemini request...');
+          Padding(
+            padding: EdgeInsetsGeometry.fromLTRB(10, 0, 0, 0),
+            child: IconButton(
+              onPressed: () async{
+                try {
+                  debugPrint('Starting Gemini request...');
 
-                if (!context.mounted) return;
+                  if (!context.mounted) return;
 
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AiInsightsPage(),
+                    ),
+                  );
+                } catch (e) {
+                  debugPrint('AI BUTTON ERROR: $e');
+                }
+            }, 
+            icon: const Icon(Icons.insights, size: 30),
+            style: IconButton.styleFrom(
+              shape: const CircleBorder(),
+            ),
+          ),
+          ),
+        title: const Text('Home'),
+        actions: [
+          Padding(
+            padding: EdgeInsetsGeometry.fromLTRB(20,0,20,0),
+            child: IconButton(
+              icon: const Icon(Icons.event_note, size: 30,),
+              onPressed: () async{
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AiInsightsPage(),
+                    builder: (context) => const PetCalendar(),
                   ),
                 );
-              } catch (e) {
-                debugPrint('AI BUTTON ERROR: $e');
-              }
-          }, 
-          icon: const Icon(Icons.insights),
-        ),
-        title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.event_note),
-            onPressed: () async{
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PetCalendar(),
-                ),
-              );
-            },
-          ),
+              },
+            ),
+          )
         ],
       ),
       body: SingleChildScrollView(

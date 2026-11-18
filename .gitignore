@@ -68,3 +68,7 @@ coverage/
 
 # Generated
 pubspec.lock
+
+.env
+.env.*
+!.env.example

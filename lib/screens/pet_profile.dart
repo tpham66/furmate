@@ -76,7 +76,7 @@ class PetProfileState extends State<PetProfile> {
     String imageUrl = widget.petData?.imagePath ?? '';
 
     try {
-      // Image storage is not available as Firebase Storage is not free
+      // Image storage is not available yet as Firebase Storage is not free
 
       // Create or update the Pet object.
       final data = Pet(
@@ -93,11 +93,10 @@ class PetProfileState extends State<PetProfile> {
       );
 
       // Save through your existing callback.
-      widget.onSave(data);
+      await widget.onSave(data);
 
       if (!mounted) return;
-
-      Get.back();
+      Navigator.pop(context);
     } on FirebaseException catch (e) {
       debugPrint('Firebase Storage error: ${e.code} - ${e.message}');
 
@@ -163,6 +162,7 @@ class PetProfileState extends State<PetProfile> {
               children: [
                 // Image picker section
                 Stack(
+                  clipBehavior: Clip.none,
                   children: [
                     CircleAvatar(
                       radius: 50,

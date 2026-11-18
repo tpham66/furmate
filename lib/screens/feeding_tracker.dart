@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../data/pet.dart';
 import '../data/feeding_log.dart';
 import '../services/feeding_service.dart';
+import '../services/nutrition_service.dart';
+import 'dart:async';
 
 class FeedingTracker extends StatefulWidget {
   final Pet pet;
@@ -21,7 +23,7 @@ class _FeedingTrackerState extends State<FeedingTracker> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             children: [
               SizedBox(
@@ -81,7 +83,7 @@ class _FeedingTrackerState extends State<FeedingTracker> {
                   );
 
               return ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 children: [
                   Card(
                     child: Padding(
@@ -129,6 +131,7 @@ class _FeedingTrackerState extends State<FeedingTracker> {
                   ...logs.map((log) {
                     return Card(
                       child: ListTile(
+                        titleAlignment: ListTileTitleAlignment.center,
                         leading: const CircleAvatar(
                           child: Icon(Icons.restaurant),
                         ),
@@ -232,11 +235,101 @@ class _FeedingFormState extends State<_FeedingForm> {
   String _unit = 'g';
   bool _isSaving = false;
 
+  final nutritionService = NutritionService();
+
+  List<dynamic> foods = [];
+
+  bool isSearching = false;
+
+  Timer? _debounce;
+  int _searchVersion = 0;
+
+  double? _kcalPer100g;
+
+  Future<void> searchFood(String query) async {
+    if (query.trim().length < 2) return;
+
+    setState(() => isSearching = true);
+
+    try {
+      final results = await nutritionService.searchFood(query);
+
+      if (!mounted) return;
+
+      setState(() {
+        foods = results;
+      });
+    } catch (e) {
+      debugPrint('Nutrition API error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isSearching = false);
+      }
+    }
+  }
+
+
+  void _onFoodChanged(String query) {
+    _debounce?.cancel();
+
+    // Invalidate previous searches.
+    final version = ++_searchVersion;
+
+    setState(() {
+      foods = [];
+      _kcalPer100g = null;
+      _caloriesController.clear();
+      isSearching = false;
+    });
+
+    if (query.trim().length < 3) return;
+
+    _debounce = Timer(
+      const Duration(milliseconds: 400),
+      () => _searchSuggestions(query.trim(), version),
+    );
+  }
+
+  Future<void> _searchSuggestions(
+    String query,
+    int version,
+  ) async {
+    if (!mounted || version != _searchVersion) return;
+
+    setState(() => isSearching = true);
+
+    try {
+      final results = await nutritionService.searchFood(query);
+
+      // Ignore results from older requests.
+      if (!mounted || version != _searchVersion) return;
+
+      setState(() {
+        foods = results;
+      });
+    } catch (e) {
+      debugPrint('Nutrition suggestions failed: $e');
+
+      if (!mounted || version != _searchVersion) return;
+
+      setState(() {
+        foods = [];
+      });
+    } finally {
+      if (mounted && version == _searchVersion) {
+        setState(() => isSearching = false);
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _debounce?.cancel();
+
     _foodController.dispose();
     _quantityController.dispose();
     _caloriesController.dispose();
+
     super.dispose();
   }
 
@@ -279,15 +372,59 @@ class _FeedingFormState extends State<_FeedingForm> {
     }
   }
 
+  double estimateCalories({
+    required double grams,
+    required double kcalPer100g,
+  }) {
+    return grams * kcalPer100g / 100;
+  }
+
+  void _calculateCalories() {
+    final quantity = double.tryParse(
+      _quantityController.text.trim(),
+    );
+
+    if (quantity == null ||
+        !quantity.isFinite ||
+        quantity <= 0 ||
+        _kcalPer100g == null) {
+      _caloriesController.clear();
+      return;
+    }
+
+    double grams;
+
+    switch (_unit) {
+      case 'g':
+        grams = quantity;
+        break;
+
+      case 'oz':
+        grams = quantity * 28.3495;
+        break;
+
+      default:
+        // Cups require a product-specific grams-per-cup value.
+        _caloriesController.clear();
+        return;
+    }
+
+    final estimatedCalories =
+        grams * _kcalPer100g! / 100;
+
+    _caloriesController.text =
+        estimatedCalories.toStringAsFixed(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
-          24,
-          24,
-          24,
-          MediaQuery.of(context).viewInsets.bottom + 24,
+          20,
+          20,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 20,
         ),
         child: Form(
           key: _formKey,
@@ -303,14 +440,59 @@ class _FeedingFormState extends State<_FeedingForm> {
               TextFormField(
                 controller: _foodController,
                 decoration: const InputDecoration(
-                  labelText: 'Food Name',
-                  hintText: 'e.g. Royal Canin',
+                  labelText: 'Search Food',
+                  hintText: 'e.g. Chicken, egg, Royal Canin',
+                  prefixIcon: Icon(Icons.search)
                 ),
                 validator: (value) =>
                     value == null || value.trim().isEmpty
                         ? 'Enter a food name'
                         : null,
+                onChanged: _onFoodChanged,
               ),
+
+              if (isSearching)
+                const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(),
+                ),
+
+              if (foods.isNotEmpty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: foods.length,
+                    itemBuilder: (context, index) {
+                      final food = foods[index];
+                      final name = food['name']?.toString() ?? 'Unknown food';
+                      final calories =
+                          (food['kcalPer100g'] as num?)?.toDouble();
+
+                      return ListTile(
+                        title: Text(name),
+                        subtitle: Text(
+                          calories == null
+                              ? 'Calories unavailable'
+                              : '${calories.toStringAsFixed(1)} kcal / 100 g',
+                        ),
+                        onTap: () {
+                          _debounce?.cancel();
+                          _searchVersion++;
+
+                          setState(() {
+                            _foodController.text = name;
+                            _kcalPer100g = calories;
+                            foods = [];
+                            isSearching = false;
+                          });
+
+                          _calculateCalories();
+                        },
+                      );
+                    },
+                  ),
+                ),
 
               const SizedBox(height: 12),
 
@@ -363,6 +545,9 @@ class _FeedingFormState extends State<_FeedingForm> {
                         }
 
                         return null;
+                      },
+                      onChanged: (value) {
+                        _calculateCalories();
                       },
                     ),
                   ),

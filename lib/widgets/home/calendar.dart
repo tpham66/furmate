@@ -1,4 +1,5 @@
 
+import 'package:flutter/material.dart' as legacy;
 import 'package:material_ui/material_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -154,48 +155,50 @@ Future<void> showMonthYearPicker() async {
       ),
       body: Column(
         children: [
-          TableCalendar<Event>(
-            key: ValueKey('${focusedDay.year}-${focusedDay.month}'),
-            firstDay: DateTime.utc(2000, 1, 1),
-            lastDay: DateTime.utc(2100, 12, 31),
-            focusedDay: focusedDay,
+          legacy.Material(
+            child: TableCalendar<Event>(
+              key: ValueKey('${focusedDay.year}-${focusedDay.month}'),
+              firstDay: DateTime.utc(2000, 1, 1),
+              lastDay: DateTime.utc(2100, 12, 31),
+              focusedDay: focusedDay,
 
-            onHeaderTapped: (day) => showMonthYearPicker(),
+              onHeaderTapped: (day) => showMonthYearPicker(),
 
-            selectedDayPredicate: (day) {
-              return isSameDay(selectedDay, day);
-            },
-            onDaySelected: (selected, focused) {
-              setState(() {
-                selectedDay = selected;
+              selectedDayPredicate: (day) {
+                return isSameDay(selectedDay, day);
+              },
+              onDaySelected: (selected, focused) {
+                setState(() {
+                  selectedDay = selected;
+                  focusedDay = focused;
+                });
+              },
+
+              eventLoader: getEventsForDay,
+
+              onPageChanged: (focused) {
                 focusedDay = focused;
-              });
-            },
+              },
 
-            eventLoader: getEventsForDay,
-
-            onPageChanged: (focused) {
-              focusedDay = focused;
-            },
-
-            calendarStyle: const CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: Color(0xFFD9C8B8),
-                shape: BoxShape.circle,
+              calendarStyle: const CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: Color(0xFFD9C8B8),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Color(0xFF9F795E),
+                  shape: BoxShape.circle,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: Color(0xFF9F795E),
+                  shape: BoxShape.circle,
+                ),
               ),
-              selectedDecoration: BoxDecoration(
-                color: Color(0xFF9F795E),
-                shape: BoxShape.circle,
-              ),
-              markerDecoration: BoxDecoration(
-                color: Color(0xFF9F795E),
-                shape: BoxShape.circle,
-              ),
-            ),
 
-            headerStyle: const HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
             ),
           ),
 

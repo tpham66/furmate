@@ -18,12 +18,58 @@ class PetDashboard extends StatefulWidget {
 class PetDashboardState extends State<PetDashboard> {
   @override
   Widget build(BuildContext context) {
+    final imageUrl = widget.pet.imagePath.trim();
+    final hasImage = Uri.tryParse(imageUrl)?.hasAbsolutePath == true &&
+    imageUrl.startsWith('https://');
     return DefaultTabController(
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.pet.name),
-          
+          toolbarHeight: 150,
+          title: Row(
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage: hasImage
+                        ? NetworkImage(imageUrl)
+                        : null,
+                child: !hasImage
+                    ? const Icon(
+                        Icons.pets,
+                        size: 40,
+                        color: Colors.grey,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.pet.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '${widget.pet.breed} · ${widget.pet.age} years old',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ]
+          ),
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
