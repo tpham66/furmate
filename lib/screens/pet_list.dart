@@ -6,6 +6,8 @@ import 'package:furmate/screens/pet_profile.dart';
 import '../data/pet.dart';
 import 'dart:io';
 
+import '../widgets/general/image.dart';
+
 enum Menu { edit, remove }
 
 
@@ -164,16 +166,11 @@ class PetListState extends State<PetList> {
                         MaterialPageRoute(builder: (context) => PetDashboard(pet: pets[index]))
                       );
                     },
-                    leading: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: (pets[index].imagePath.isNotEmpty)
-                          ? FileImage(File(pets[index].imagePath))
-                          : null,
-                      child: (pets[index].imagePath.isEmpty)
-                          ? const Icon(Icons.pets, color: Colors.grey)
-                          : null,
-                    ),
+                    leading: CustomImage(
+                          id: pets[index].id,
+                          imagePath: pets[index].imagePath,
+                          size: 30,
+                        ),
                     title: Text(pets[index].name),
                     subtitle: Text('Age: ${pets[index].age}'),
                     trailing: PopupMenuButton<Menu>(

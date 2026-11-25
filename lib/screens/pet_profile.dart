@@ -1,8 +1,11 @@
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:furmate/widgets/general/image.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import '../widgets/general/image_picker.dart';
+import '../services/images_service.dart';
 import '../widgets/general/button.dart';
-import 'package:get/get.dart';
 import '../data/pet.dart';
 import 'package:uuid/uuid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -44,15 +47,24 @@ class PetProfileState extends State<PetProfile> {
   final List<bool> _selectedUnits = [true, false];
 
   Uint8List? _image;
+  XFile? _selectedImage;
   String? _existingImageUrl;
+
+  final ImageService _imageService = ImageService();
 
   Future<void> _pickImage() async {
     try {
-      final selectedImage = await _imagePickerService.pickImageFromGallery();
+      final selectedImage =
+          await _imagePickerService.pickImageFromGallery();
+
       if (selectedImage == null) return;
+
       final bytes = await selectedImage.readAsBytes();
+
       if (!mounted) return;
+
       setState(() {
+        _selectedImage = selectedImage;
         _image = bytes;
       });
     } catch (e) {
@@ -60,25 +72,21 @@ class PetProfileState extends State<PetProfile> {
     }
   }
 
+
   Future<void> _saveForm() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
-    // Reuse the ID when editing an existing pet.
     final petId = widget.petData?.id ?? const Uuid().v4();
 
-    // Preserve the existing photo if no new one was selected.
-    String imageUrl = widget.petData?.imagePath ?? '';
+    String imagePath = widget.petData?.imagePath ?? '';
 
     try {
-      // Image storage is not available yet as Firebase Storage is not free
-
-      // Create or update the Pet object.
+      // Save the pet first so its Firestore document exists.
       final data = Pet(
         id: petId,
         name: _nameController.text.trim(),
@@ -89,39 +97,42 @@ class PetProfileState extends State<PetProfile> {
         weight: double.tryParse(_weightController.text) ?? 0,
         weightUnit: weightUnit,
         note: _noteController.text.trim(),
-        imagePath: imageUrl,
+        imagePath: imagePath,
       );
 
-      // Save through your existing callback.
       await widget.onSave(data);
+
+      // Upload the new image only if one was selected.
+      if (_selectedImage != null) {
+        imagePath = await _imageService.uploadPetImage(
+          petId: petId,
+          image: _selectedImage!,
+        );
+
+        // Save the Cloudflare image reference in Firestore.
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('pets')
+            .doc(petId)
+            .update({
+          'imagePath': imagePath,
+        });
+      }
 
       if (!mounted) return;
       Navigator.pop(context);
-    } on FirebaseException catch (e) {
-      debugPrint('Firebase Storage error: ${e.code} - ${e.message}');
-
-      if (!mounted) return;
-
-      Get.snackbar(
-        'Save Failed',
-        e.message ?? 'Unable to upload pet image.',
-      );
     } catch (e) {
       debugPrint('Failed to save pet: $e');
 
       if (!mounted) return;
 
-      Get.snackbar('Error', 'Failed to save pet: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save pet: $e'),
+        ),
+      );
     }
-  }
-  
-  String getGender(List<bool> genders) {
-    if (genders[0]) {
-      return 'Female';
-    } else if (genders[1]) {
-      return 'Male';
-    }
-    return 'Unknown';
   }
 
   @override
@@ -147,6 +158,16 @@ class PetProfileState extends State<PetProfile> {
     }
   }
 
+  String getGender(List<bool> genders) {
+    if (genders[0]) {
+      return 'Female';
+    } else if (genders[1]) {
+      return 'Male';
+    } else {
+      return 'Unknown';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -163,26 +184,17 @@ class PetProfileState extends State<PetProfile> {
                 // Image picker section
                 Stack(
                   clipBehavior: Clip.none,
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: _image != null
-                          ? MemoryImage(_image!)
-                          : (_existingImageUrl != null &&
-                                  _existingImageUrl!.startsWith('https://'))
-                              ? NetworkImage(_existingImageUrl!)
-                              : null,
-                      child: _image == null &&
-                              (_existingImageUrl == null ||
-                                  !_existingImageUrl!.startsWith('https://'))
-                          ? const Icon(
-                              Icons.pets,
-                              size: 50,
-                              color: Colors.grey,
-                            )
-                          : null,
-                    ),
+                  children: [  
+                  _image != null
+                      ? CircleAvatar(
+                          radius: 50,
+                          backgroundImage: MemoryImage(_image!),
+                        )
+                      : CustomImage(
+                          id: widget.petData?.id ?? '',
+                          imagePath: _existingImageUrl ?? '',
+                        ),
+
                     Positioned(
                       bottom: 0,
                       right: -10,

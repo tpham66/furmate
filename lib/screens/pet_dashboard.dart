@@ -3,6 +3,8 @@ import 'package:furmate/screens/feeding_tracker.dart';
 import '../data/pet.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../widgets/general/image.dart';
+
 class PetDashboard extends StatefulWidget {
   final Pet pet;
 
@@ -22,25 +24,15 @@ class PetDashboardState extends State<PetDashboard> {
     final hasImage = Uri.tryParse(imageUrl)?.hasAbsolutePath == true &&
     imageUrl.startsWith('https://');
     return DefaultTabController(
-      length: 4,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 150,
           title: Row(
             children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey.shade200,
-                backgroundImage: hasImage
-                        ? NetworkImage(imageUrl)
-                        : null,
-                child: !hasImage
-                    ? const Icon(
-                        Icons.pets,
-                        size: 40,
-                        color: Colors.grey,
-                      )
-                    : null,
+              CustomImage(
+                id: widget.pet.id,
+                imagePath: widget.pet.imagePath,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -73,31 +65,14 @@ class PetDashboardState extends State<PetDashboard> {
           bottom: const TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: 'Overview'),
-              Tab(text: 'Feeding'),
-              Tab(text: 'Expenses'),
-              Tab(text: 'Health'),
+              Tab(text: 'Feeding', icon: Icon(Icons.restaurant)),
+              Tab(text: 'Expenses', icon: Icon(Icons.wallet)),
+              Tab(text: 'Health', icon: Icon(Icons.health_and_safety)),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            // Overview
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Text('Name: ${widget.pet.name}'),
-                  Text('Species: ${widget.pet.species}'),
-                  Text('Breed: ${widget.pet.breed}'),
-                  Text(
-                    'Weight: ${widget.pet.weight} '
-                    '${widget.pet.weightUnit}',
-                  ),
-                ],
-              ),
-            ),
-
             // Feeding
             FeedingTracker(pet: widget.pet),
 

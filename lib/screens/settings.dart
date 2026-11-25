@@ -1,10 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:furmate/screens/signin.dart';
 import '../services/settings/enable_notifications.dart';
 import '../widgets/general/error_dialog.dart';
-import 'package:get/get.dart';
 import 'user_profile.dart';
 import '../services/authentication/google_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -135,7 +133,7 @@ class SettingsState extends State<Settings> {
 
       if (!mounted) return;
 
-      Get.offAll(() => SignIn());
+      Navigator.pushNamedAndRemoveUntil(context, '/splashscreen', (Route<dynamic> route) => false);
     } catch (e) {
       debugPrint('Sign out error: $e');
     }
@@ -154,7 +152,7 @@ class SettingsState extends State<Settings> {
             title: Text('Edit Profile'),
             leading: Icon(Icons.person),
             onTap: () {
-              Get.to(() => UserProfile());
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const UserProfile()));
             },
           ),
           Divider(),

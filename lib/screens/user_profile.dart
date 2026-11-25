@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:furmate/widgets/general/image.dart';
 import 'package:material_ui/material_ui.dart';
 import '../widgets/general/image_picker.dart';
 import 'dart:typed_data';
-import 'package:get/get.dart';
+import '../services/images_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 class UserProfile extends StatefulWidget {
   const UserProfile({super.key});
@@ -19,14 +21,24 @@ class UserProfileState extends State<UserProfile> {
 
   final ImagePickerService _imagePickerService = ImagePickerService();
   Uint8List? _imageBytes;
+  XFile? _selectedImage;
+  final ImageService _imageService = ImageService();
+  bool _isSaving = false;
+  String _profileImagePath = '';
 
   Future<void> _pickImage() async {
     try {
-      final selectedImage = await _imagePickerService.pickImageFromGallery();
+      final selectedImage =
+          await _imagePickerService.pickImageFromGallery();
+
       if (selectedImage == null) return;
+
       final bytes = await selectedImage.readAsBytes();
+
       if (!mounted) return;
+
       setState(() {
+        _selectedImage = selectedImage;
         _imageBytes = bytes;
       });
     } catch (e) {
@@ -34,19 +46,67 @@ class UserProfileState extends State<UserProfile> {
     }
   }
 
+  Future<void> _loadProfileImage() async {
+    try {
+      final bytes = await _imageService.getUserImage();
+
+      if (!mounted || _selectedImage != null) return;
+
+      setState(() {
+        _imageBytes = bytes;
+      });
+    } catch (e) {
+      // No uploaded profile picture yet is normal.
+      debugPrint('Profile image load: $e');
+    }
+  }
+  Future<void> _loadProfileData() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+
+      if (!mounted) return;
+
+      final data = doc.data();
+
+      setState(() {
+        _profileImagePath =
+            (data?['profileImagePath'] as String?) ?? '';
+      });
+
+      _phoneController.text =
+          (data?['phoneNumber'] as String?) ??
+          currentUser.phoneNumber ??
+          '';
+
+      _locationController.text =
+          (data?['location'] as String?) ?? '';
+
+      if (data?['profileImagePath'] == '/api/users/me/image') {
+        await _loadProfileImage();
+      }
+    } catch (e) {
+      debugPrint('Profile data load failed: $e');
+    }
+}
+
   @override
   void initState() {
     super.initState();
     // Initialize controllers with current user data
-    // _nameController.text = user?.displayName ?? "Username";
+    _nameController.text = user?.displayName ?? "Username";
     _phoneController.text = user?.phoneNumber ?? "+ 123 456 7890";
     _locationController.text = "City, Country"; // Replace with actual location if available
+    _loadProfileData();  
   }
 
   @override
   Widget build(BuildContext context) {
-    final photoUrl = user?.photoURL;
-    final hasValidPhotoUrl = photoUrl != null && photoUrl.startsWith('https://');
     return Scaffold(
       appBar: AppBar(title: Text('User Profile')),
       body: Center(
@@ -56,15 +116,14 @@ class UserProfileState extends State<UserProfile> {
             children: [
               Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.black,
-                    backgroundImage: _imageBytes != null
-                        ? MemoryImage(_imageBytes!)
-                        : hasValidPhotoUrl
-                          ? NetworkImage(photoUrl)
-                          : null,
-                    child: _imageBytes == null && !hasValidPhotoUrl ? const Icon(Icons.person, size: 50, color: Colors.white): null,
+                  _imageBytes != null
+                  ? CircleAvatar(
+                      radius: 50,
+                      backgroundImage: MemoryImage(_imageBytes!),
+                  )
+                  : CustomImage(
+                      id: user!.uid,
+                      imagePath: _profileImagePath,
                   ),
                   Positioned(
                     bottom: 0,
@@ -118,9 +177,9 @@ class UserProfileState extends State<UserProfile> {
               ElevatedButton(
                 onPressed: () {
                   // Add edit functionality
-                  _updateProfile();
+                  _isSaving ? null : _updateProfile();
                 },
-                child: Text("Save"),
+                child: _isSaving ? const CircularProgressIndicator() : const Text("Save"),
               ),
             ],
           ),
@@ -129,30 +188,53 @@ class UserProfileState extends State<UserProfile> {
     );
   }
 
+
   Future<void> _updateProfile() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || _isSaving) return;
 
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
     final location = _locationController.text.trim();
-    
+
+    setState(() => _isSaving = true);
+
     try {
-      // Image storage is not available as Firebase Storage is not free
-      if (name.isNotEmpty && name != user.displayName) await user.updateDisplayName(name);
+      String? imagePath;
+
+      // Upload to Cloudflare R2 only when a new photo is selected.
+      if (_selectedImage != null) {
+        imagePath = await _imageService.uploadUserImage(
+          _selectedImage!,
+        );
+      }
+
+      if (name.isNotEmpty &&
+          name != currentUser.displayName) {
+        await currentUser.updateDisplayName(name);
+      }
+
+      final updates = <String, dynamic>{
+        'phoneNumber': phone,
+        'location': location,
+      };
+
+      if (imagePath != null) {
+        updates['profileImagePath'] = imagePath;
+      }
+
       await FirebaseFirestore.instance
           .collection('users')
-          .doc(user.uid)
-          .set({
-            'phoneNumber': phone,
-            'location': location,
-          }, SetOptions(merge: true));
-      await user.reload();
+          .doc(currentUser.uid)
+          .set(updates, SetOptions(merge: true));
+
+      await currentUser.reload();
 
       if (!mounted) return;
 
       setState(() {
-        this.user = FirebaseAuth.instance.currentUser;
+        user = FirebaseAuth.instance.currentUser;
+        _selectedImage = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -160,15 +242,22 @@ class UserProfileState extends State<UserProfile> {
           content: Text('Profile updated successfully!'),
         ),
       );
-      Get.back();
-    } on FirebaseAuthException catch (e) {
+
+      Navigator.pop(context);
+    } catch (e) {
+      debugPrint('Failed to update profile: $e');
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update profile: ${e.message}'),
+          content: Text('Failed to update profile: $e'),
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
