@@ -4,7 +4,6 @@ import 'package:furmate/screens/pet_dashboard.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:furmate/screens/pet_profile.dart';
 import '../data/pet.dart';
-import 'dart:io';
 
 import '../widgets/general/image.dart';
 
